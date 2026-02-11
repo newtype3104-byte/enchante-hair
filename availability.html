@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>空き状況 | ENCHANTE' HAIR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e12;
+    --card: #1a1a22;
+    --card-hover: #22222e;
+    --gold: #c9a96e;
+    --gold-light: #e8d5a8;
+    --green: #4ade80;
+    --green-bg: rgba(74, 222, 128, 0.08);
+    --red: #f87171;
+    --red-bg: rgba(248, 113, 113, 0.06);
+    --text: #e8e8ec;
+    --text-dim: #8888a0;
+    --border: #2a2a38;
+    --accent-blue: #60a5fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .header {
+    text-align: center;
+    padding: 2.5rem 1rem 1rem;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 2px;
+    background: var(--gold);
+    margin: 1rem auto 0;
+  }
+
+  .logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.35em;
+    color: var(--gold);
+    text-transform: uppercase;
+    font-weight: 300;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    letter-spacing: 0.02em;
+  }
+
+  .updated {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 0.75rem;
+  }
+
+  /* Menu filter */
+  .menu-filter {
+    padding: 1rem 1rem 0;
+  }
+
+  .menu-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .menu-chips {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .menu-chips::-webkit-scrollbar { display: none; }
+
+  .chip {
+    flex-shrink: 0;
+    padding: 0.55rem 1rem;
+    border-radius: 100px;
+    border: 1.5px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    color: var(--text);
+    font-size: 0.88rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .chip.active {
+    background: var(--gold);
+    color: var(--bg);
+    border-color: var(--gold);
+    font-weight: 700;
+  }
+  .chip .chip-time {
+    font-size: 0.72rem;
+    opacity: 0.6;
+    margin-left: 0.25rem;
+  }
+
+  /* Schedule list */
+  .schedule {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .day-card {
+    background: var(--card);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    animation: fadeUp 0.4s ease both;
+  }
+  .day-card:nth-child(1) { animation-delay: 0.0s; }
+  .day-card:nth-child(2) { animation-delay: 0.03s; }
+  .day-card:nth-child(3) { animation-delay: 0.06s; }
+  .day-card:nth-child(4) { animation-delay: 0.09s; }
+  .day-card:nth-child(5) { animation-delay: 0.12s; }
+  .day-card:nth-child(6) { animation-delay: 0.15s; }
+  .day-card:nth-child(7) { animation-delay: 0.18s; }
+  .day-card:nth-child(8) { animation-delay: 0.21s; }
+  .day-card:nth-child(9) { animation-delay: 0.24s; }
+  .day-card:nth-child(10) { animation-delay: 0.27s; }
+  .day-card:nth-child(11) { animation-delay: 0.30s; }
+  .day-card:nth-child(12) { animation-delay: 0.33s; }
+  .day-card:nth-child(13) { animation-delay: 0.36s; }
+  .day-card:nth-child(14) { animation-delay: 0.39s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .day-card.full {
+    background: var(--red-bg);
+    border-color: rgba(248, 113, 113, 0.1);
+  }
+
+  .day-card.available {
+    border-color: rgba(74, 222, 128, 0.12);
+  }
+
+  .day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1rem;
+  }
+
+  .day-left {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+
+  .day-date {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+    min-width: 2ch;
+  }
+
+  .day-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .day-dow {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .day-month {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  .day-dow.sat { color: var(--accent-blue); }
+  .day-dow.sun { color: var(--red); }
+
+  .status-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.25rem 0.7rem;
+    border-radius: 100px;
+    letter-spacing: 0.03em;
+  }
+
+  .status-badge.full {
+    background: rgba(248, 113, 113, 0.15);
+    color: var(--red);
+  }
+
+  .status-badge.open {
+    background: rgba(74, 222, 128, 0.12);
+    color: var(--green);
+  }
+
+  /* Time slots */
+  .slots {
+    padding: 0 1rem 0.9rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .slot {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    transition: all 0.2s;
+  }
+
+  .slot.highlight {
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+  }
+
+  .slot-note {
+    font-size: 0.6rem;
+    color: var(--gold-light);
+    background: rgba(201, 169, 110, 0.12);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .slot-duration {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .slot-duration.long { background: var(--green); }
+  .slot-duration.medium { background: var(--gold); }
+  .slot-duration.short { background: var(--red); }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 2rem 1rem 3rem;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    line-height: 1.8;
+  }
+
+  .footer a {
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.5rem 1rem 0;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+  }
+
+  .legend-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  /* Today indicator */
+  .today-indicator {
+    font-size: 0.55rem;
+    background: var(--gold);
+    color: var(--bg);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+  }
+
+  /* Dimmed past days */
+  .day-card.past {
+    opacity: 0.4;
+  }
+
+  /* No match message */
+  .no-match {
+    display: none;
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+  .no-match.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Enchante' Hair</div>
+  <h1 class="page-title">空き状況</h1>
+  <div class="updated">2/11〜2/24</div>
+</div>
+
+<div class="menu-filter">
+  <div class="menu-label">メニューで絞り込み</div>
+  <div class="menu-chips">
+    <button class="chip active" data-minutes="0">すべて</button>
+    <button class="chip" data-minutes="30">カット <span class="chip-time">30分</span></button>
+    <button class="chip" data-minutes="40">カット+シャンプー <span class="chip-time">40分</span></button>
+    <button class="chip" data-minutes="60">会員コース <span class="chip-time">60分</span></button>
+    <button class="chip" data-minutes="90">カット+カラー <span class="chip-time">90分</span></button>
+    <button class="chip" data-minutes="120">パーマ <span class="chip-time">120分〜</span></button>
+  </div>
+</div>
+
+<div class="legend">
+  <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> 60分以上</span>
+  <span class="legend-item"><span class="legend-dot" style="background:var(--gold)"></span> 30〜59分</span>
+  <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span> 30分未満</span>
+</div>
+
+<div class="schedule" id="schedule"></div>
+<div class="no-match" id="noMatch">選択したメニューに合う空き枠がありません 🙇</div>
+
+<div class="footer">
+  ご予約・お問い合わせはLINEから<br>
+  ENCHANTE' HAIR
+</div>
+
+<script>
+const DATA = [
+  { date: '2/11', dow: '水', month: '2月', day: 11, full: true, slots: [] },
+  { date: '2/12', dow: '木', month: '2月', day: 12, full: false, slots: [
+    { time: '11:00〜12:00', minutes: 60 },
+    { time: '13:00〜15:00', minutes: 120 },
+    { time: '16:00〜17:30', minutes: 90 },
+  ]},
+  { date: '2/13', dow: '金', month: '2月', day: 13, full: false, slots: [
+    { time: '16:00〜17:30', minutes: 90 },
+  ]},
+  { date: '2/14', dow: '土', month: '2月', day: 14, full: false, slots: [
+    { time: '10:00〜10:30', minutes: 30, note: 'カットのみ' },
+    { time: '11:20〜12:00', minutes: 40 },
+    { time: '13:00〜14:00', minutes: 60 },
+    { time: '15:00〜18:00', minutes: 180 },
+  ]},
+  { date: '2/15', dow: '日', month: '2月', day: 15, full: false, slots: [
+    { time: '11:20〜12:00', minutes: 40 },
+    { time: '13:00〜14:00', minutes: 60 },
+    { time: '16:30〜18:00', minutes: 90 },
+  ]},
+  { date: '2/16', dow: '月', month: '2月', day: 16, full: true, slots: [] },
+  { date: '2/17', dow: '火', month: '2月', day: 17, full: true, slots: [] },
+  { date: '2/18', dow: '水', month: '2月', day: 18, full: false, slots: [
+    { time: '10:00〜19:00', minutes: 540 },
+    { time: '19:40〜21:00', minutes: 80 },
+  ]},
+  { date: '2/19', dow: '木', month: '2月', day: 19, full: false, slots: [
+    { time: '10:00〜21:00', minutes: 660 },
+  ]},
+  { date: '2/20', dow: '金', month: '2月', day: 20, full: false, slots: [
+    { time: '10:00〜21:00', minutes: 660 },
+  ]},
+  { date: '2/21', dow: '土', month: '2月', day: 21, full: false, slots: [
+    { time: '8:00〜10:00', minutes: 120 },
+    { time: '10:30〜18:00', minutes: 450 },
+  ]},
+  { date: '2/22', dow: '日', month: '2月', day: 22, full: false, slots: [
+    { time: '8:00〜11:00', minutes: 180 },
+    { time: '12:00〜18:00', minutes: 360 },
+  ]},
+  { date: '2/23', dow: '月', month: '2月', day: 23, full: true, slots: [] },
+  { date: '2/24', dow: '火', month: '2月', day: 24, full: false, slots: [
+    { time: '13:00〜19:00', minutes: 360 },
+  ]},
+];
+
+const TODAY = 11; // Feb 11
+
+function getDurationClass(min) {
+  if (min >= 60) return 'long';
+  if (min >= 30) return 'medium';
+  return 'short';
+}
+
+function getDowClass(dow) {
+  if (dow === '土') return 'sat';
+  if (dow === '日') return 'sun';
+  return '';
+}
+
+let selectedMinutes = 0;
+
+function render() {
+  const container = document.getElementById('schedule');
+  const noMatch = document.getElementById('noMatch');
+  container.innerHTML = '';
+  let hasVisible = false;
+
+  DATA.forEach(d => {
+    const isPast = d.day < TODAY;
+    const isToday = d.day === TODAY;
+
+    // Filter slots
+    let filteredSlots = d.slots;
+    if (selectedMinutes > 0 && !d.full) {
+      filteredSlots = d.slots.filter(s => s.minutes >= selectedMinutes);
+    }
+
+    // If filtering and no slots match (and not full), check visibility
+    if (selectedMinutes > 0 && !d.full && filteredSlots.length === 0) {
+      return; // skip this day entirely
+    }
+    if (selectedMinutes > 0 && d.full) {
+      return; // skip full days when filtering
+    }
+
+    hasVisible = true;
+
+    const card = document.createElement('div');
+    card.className = `day-card ${d.full ? 'full' : 'available'} ${isPast ? 'past' : ''}`;
+
+    const slotsCount = filteredSlots.length;
+
+    card.innerHTML = `
+      <div class="day-header">
+        <div class="day-left">
+          <span class="day-date">${d.day}</span>
+          <div class="day-meta">
+            <span class="day-dow ${getDowClass(d.dow)}">${d.dow}${isToday ? '<span class="today-indicator">TODAY</span>' : ''}</span>
+            <span class="day-month">${d.month}</span>
+          </div>
+        </div>
+        ${d.full
+          ? '<span class="status-badge full">✕ 満席</span>'
+          : `<span class="status-badge open">${slotsCount}枠</span>`
+        }
+      </div>
+      ${!d.full ? `
+        <div class="slots">
+          ${filteredSlots.map(s => `
+            <span class="slot ${selectedMinutes > 0 ? 'highlight' : ''}">
+              <span class="slot-duration ${getDurationClass(s.minutes)}"></span>
+              ${s.time}
+              ${s.note ? `<span class="slot-note">✂️ ${s.note}</span>` : ''}
+            </span>
+          `).join('')}
+        </div>
+      ` : ''}
+    `;
+
+    container.appendChild(card);
+  });
+
+  noMatch.className = hasVisible ? 'no-match' : 'no-match visible';
+}
+
+// Chip selection
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    selectedMinutes = parseInt(chip.dataset.minutes);
+    render();
+  });
+});
+
+render();
+</script>
+</body>
+</html>
