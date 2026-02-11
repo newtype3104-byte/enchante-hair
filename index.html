@@ -10,7 +10,6 @@
   :root {
     --bg: #0e0e12;
     --card: #1a1a22;
-    --card-hover: #22222e;
     --gold: #c9a96e;
     --gold-light: #e8d5a8;
     --green: #4ade80;
@@ -22,9 +21,7 @@
     --border: #2a2a38;
     --accent-blue: #60a5fa;
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   body {
     font-family: 'Noto Sans JP', 'Outfit', sans-serif;
     background: var(--bg);
@@ -32,13 +29,10 @@
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
-
   .header {
     text-align: center;
     padding: 2.5rem 1rem 1rem;
-    position: relative;
   }
-
   .header::after {
     content: '';
     display: block;
@@ -47,7 +41,6 @@
     background: var(--gold);
     margin: 1rem auto 0;
   }
-
   .logo {
     font-family: 'Outfit', sans-serif;
     font-size: 0.7rem;
@@ -56,25 +49,40 @@
     text-transform: uppercase;
     font-weight: 300;
   }
-
   .page-title {
     font-size: 1.5rem;
     font-weight: 700;
     margin-top: 0.5rem;
-    letter-spacing: 0.02em;
   }
-
   .updated {
     font-size: 0.7rem;
     color: var(--text-dim);
     margin-top: 0.75rem;
   }
-
-  /* Menu filter */
-  .menu-filter {
-    padding: 1rem 1rem 0;
+  .loading {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--text-dim);
+    font-size: 0.85rem;
   }
-
+  .loading-spinner {
+    width: 28px;
+    height: 28px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--red);
+    font-size: 0.85rem;
+    display: none;
+  }
+  .menu-filter { padding: 1rem 1rem 0; }
   .menu-label {
     font-size: 0.65rem;
     letter-spacing: 0.1em;
@@ -82,7 +90,6 @@
     text-transform: uppercase;
     margin-bottom: 0.5rem;
   }
-
   .menu-chips {
     display: flex;
     gap: 0.4rem;
@@ -92,7 +99,6 @@
     scrollbar-width: none;
   }
   .menu-chips::-webkit-scrollbar { display: none; }
-
   .chip {
     flex-shrink: 0;
     padding: 0.55rem 1rem;
@@ -117,20 +123,16 @@
     opacity: 0.6;
     margin-left: 0.25rem;
   }
-
-  /* Schedule list */
   .schedule {
     padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
   }
-
   .day-card {
     background: var(--card);
     border-radius: 14px;
     overflow: hidden;
-    transition: all 0.2s;
     border: 1px solid transparent;
     animation: fadeUp 0.4s ease both;
   }
@@ -148,34 +150,28 @@
   .day-card:nth-child(12) { animation-delay: 0.33s; }
   .day-card:nth-child(13) { animation-delay: 0.36s; }
   .day-card:nth-child(14) { animation-delay: 0.39s; }
-
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
   .day-card.full {
     background: var(--red-bg);
     border-color: rgba(248, 113, 113, 0.1);
   }
-
   .day-card.available {
     border-color: rgba(74, 222, 128, 0.12);
   }
-
   .day-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0.9rem 1rem;
   }
-
   .day-left {
     display: flex;
     align-items: baseline;
     gap: 0.6rem;
   }
-
   .day-date {
     font-family: 'Outfit', sans-serif;
     font-size: 1.6rem;
@@ -183,54 +179,42 @@
     line-height: 1;
     min-width: 2ch;
   }
-
   .day-meta {
     display: flex;
     flex-direction: column;
     gap: 0.1rem;
   }
-
   .day-dow {
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--text);
   }
-
   .day-month {
     font-size: 0.6rem;
     color: var(--text-dim);
-    letter-spacing: 0.05em;
   }
-
   .day-dow.sat { color: var(--accent-blue); }
   .day-dow.sun { color: var(--red); }
-
   .status-badge {
     font-size: 0.68rem;
     font-weight: 600;
     padding: 0.25rem 0.7rem;
     border-radius: 100px;
-    letter-spacing: 0.03em;
   }
-
   .status-badge.full {
     background: rgba(248, 113, 113, 0.15);
     color: var(--red);
   }
-
   .status-badge.open {
     background: rgba(74, 222, 128, 0.12);
     color: var(--green);
   }
-
-  /* Time slots */
   .slots {
     padding: 0 1rem 0.9rem;
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
   }
-
   .slot {
     display: inline-flex;
     align-items: center;
@@ -241,15 +225,11 @@
     font-size: 0.82rem;
     font-family: 'Outfit', sans-serif;
     font-weight: 500;
-    letter-spacing: 0.01em;
-    transition: all 0.2s;
   }
-
   .slot.highlight {
     background: rgba(74, 222, 128, 0.1);
     border: 1px solid rgba(74, 222, 128, 0.2);
   }
-
   .slot-note {
     font-size: 0.6rem;
     color: var(--gold-light);
@@ -258,7 +238,6 @@
     border-radius: 4px;
     font-family: 'Noto Sans JP', sans-serif;
   }
-
   .slot-duration {
     display: inline-block;
     width: 6px;
@@ -269,8 +248,6 @@
   .slot-duration.long { background: var(--green); }
   .slot-duration.medium { background: var(--gold); }
   .slot-duration.short { background: var(--red); }
-
-  /* Footer */
   .footer {
     text-align: center;
     padding: 2rem 1rem 3rem;
@@ -278,12 +255,6 @@
     font-size: 0.7rem;
     line-height: 1.8;
   }
-
-  .footer a {
-    color: var(--gold);
-    text-decoration: none;
-  }
-
   .legend {
     display: flex;
     justify-content: center;
@@ -291,7 +262,6 @@
     padding: 0.5rem 1rem 0;
     flex-wrap: wrap;
   }
-
   .legend-item {
     display: flex;
     align-items: center;
@@ -299,14 +269,7 @@
     font-size: 0.65rem;
     color: var(--text-dim);
   }
-
-  .legend-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
-
-  /* Today indicator */
+  .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
   .today-indicator {
     font-size: 0.55rem;
     background: var(--gold);
@@ -314,17 +277,10 @@
     padding: 0.1rem 0.4rem;
     border-radius: 4px;
     font-weight: 700;
-    letter-spacing: 0.05em;
     margin-left: 0.3rem;
     vertical-align: middle;
   }
-
-  /* Dimmed past days */
-  .day-card.past {
-    opacity: 0.4;
-  }
-
-  /* No match message */
+  .day-card.past { opacity: 0.4; }
   .no-match {
     display: none;
     text-align: center;
@@ -333,6 +289,8 @@
     font-size: 0.85rem;
   }
   .no-match.visible { display: block; }
+  .content-area { display: none; }
+  .content-area.visible { display: block; }
 </style>
 </head>
 <body>
@@ -340,29 +298,40 @@
 <div class="header">
   <div class="logo">Enchante' Hair</div>
   <h1 class="page-title">空き状況</h1>
-  <div class="updated">2/11〜2/24</div>
+  <div class="updated" id="dateRange"></div>
 </div>
 
-<div class="menu-filter">
-  <div class="menu-label">メニューで絞り込み</div>
-  <div class="menu-chips">
-    <button class="chip active" data-minutes="0">すべて</button>
-    <button class="chip" data-minutes="30">カット <span class="chip-time">30分</span></button>
-    <button class="chip" data-minutes="40">カット+シャンプー <span class="chip-time">40分</span></button>
-    <button class="chip" data-minutes="60">会員コース <span class="chip-time">60分</span></button>
-    <button class="chip" data-minutes="90">カット+カラー <span class="chip-time">90分</span></button>
-    <button class="chip" data-minutes="120">パーマ <span class="chip-time">120分〜</span></button>
+<div class="loading" id="loading">
+  <div class="loading-spinner"></div>
+  読み込み中...
+</div>
+
+<div class="error-msg" id="errorMsg">
+  データを取得できませんでした。<br>しばらくしてから再度お試しください。
+</div>
+
+<div class="content-area" id="contentArea">
+  <div class="menu-filter">
+    <div class="menu-label">メニューで絞り込み</div>
+    <div class="menu-chips">
+      <button class="chip active" data-minutes="0">すべて</button>
+      <button class="chip" data-minutes="30">カット <span class="chip-time">30分</span></button>
+      <button class="chip" data-minutes="40">カット+シャンプー <span class="chip-time">40分</span></button>
+      <button class="chip" data-minutes="60">会員コース <span class="chip-time">60分</span></button>
+      <button class="chip" data-minutes="90">カット+カラー <span class="chip-time">90分</span></button>
+      <button class="chip" data-minutes="120">パーマ <span class="chip-time">120分〜</span></button>
+    </div>
   </div>
-</div>
 
-<div class="legend">
-  <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> 60分以上</span>
-  <span class="legend-item"><span class="legend-dot" style="background:var(--gold)"></span> 30〜59分</span>
-  <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span> 30分未満</span>
-</div>
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> 60分以上</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--gold)"></span> 30〜59分</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span> 30分未満</span>
+  </div>
 
-<div class="schedule" id="schedule"></div>
-<div class="no-match" id="noMatch">選択したメニューに合う空き枠がありません 🙇</div>
+  <div class="schedule" id="schedule"></div>
+  <div class="no-match" id="noMatch">選択したメニューに合う空き枠がありません 🙇</div>
+</div>
 
 <div class="footer">
   ご予約・お問い合わせはLINEから<br>
@@ -370,99 +339,106 @@
 </div>
 
 <script>
-const DATA = [
-  { date: '2/11', dow: '水', month: '2月', day: 11, full: true, slots: [] },
-  { date: '2/12', dow: '木', month: '2月', day: 12, full: false, slots: [
-    { time: '11:00〜12:00', minutes: 60 },
-    { time: '13:00〜15:00', minutes: 120 },
-    { time: '16:00〜17:30', minutes: 90 },
-  ]},
-  { date: '2/13', dow: '金', month: '2月', day: 13, full: false, slots: [
-    { time: '16:00〜17:30', minutes: 90 },
-  ]},
-  { date: '2/14', dow: '土', month: '2月', day: 14, full: false, slots: [
-    { time: '10:00〜10:30', minutes: 30, note: 'カットのみ' },
-    { time: '11:20〜12:00', minutes: 40 },
-    { time: '13:00〜14:00', minutes: 60 },
-    { time: '15:00〜18:00', minutes: 180 },
-  ]},
-  { date: '2/15', dow: '日', month: '2月', day: 15, full: false, slots: [
-    { time: '11:20〜12:00', minutes: 40 },
-    { time: '13:00〜14:00', minutes: 60 },
-    { time: '16:30〜18:00', minutes: 90 },
-  ]},
-  { date: '2/16', dow: '月', month: '2月', day: 16, full: true, slots: [] },
-  { date: '2/17', dow: '火', month: '2月', day: 17, full: true, slots: [] },
-  { date: '2/18', dow: '水', month: '2月', day: 18, full: false, slots: [
-    { time: '10:00〜19:00', minutes: 540 },
-    { time: '19:40〜21:00', minutes: 80 },
-  ]},
-  { date: '2/19', dow: '木', month: '2月', day: 19, full: false, slots: [
-    { time: '10:00〜21:00', minutes: 660 },
-  ]},
-  { date: '2/20', dow: '金', month: '2月', day: 20, full: false, slots: [
-    { time: '10:00〜21:00', minutes: 660 },
-  ]},
-  { date: '2/21', dow: '土', month: '2月', day: 21, full: false, slots: [
-    { time: '8:00〜10:00', minutes: 120 },
-    { time: '10:30〜18:00', minutes: 450 },
-  ]},
-  { date: '2/22', dow: '日', month: '2月', day: 22, full: false, slots: [
-    { time: '8:00〜11:00', minutes: 180 },
-    { time: '12:00〜18:00', minutes: 360 },
-  ]},
-  { date: '2/23', dow: '月', month: '2月', day: 23, full: true, slots: [] },
-  { date: '2/24', dow: '火', month: '2月', day: 24, full: false, slots: [
-    { time: '13:00〜19:00', minutes: 360 },
-  ]},
-];
+// ============================================================
+// Google Docs ID — GASが自動更新するドキュメント
+// ============================================================
+const DOC_ID = '1L31it-00hRpTAZ0JG_YcH3ONKc5WA4GO71uV9qOeIT0';
 
-const TODAY = 11; // Feb 11
+// テキスト形式でエクスポート
+const DOC_URL = `https://docs.google.com/document/d/${DOC_ID}/export?format=txt`;
 
-function getDurationClass(min) {
-  if (min >= 60) return 'long';
-  if (min >= 30) return 'medium';
+// ============================================================
+// GASが書き出すテキストをパース
+// フォーマット例:
+//   "2/11(水)　　× 満席"
+//   "2/12(木)　　11:00~12:00、 13:00~15:00"
+//   "2/14(土)　　10:00~10:30 (✂️カットのみ)、 11:20~12:00"
+// ============================================================
+function parseDocText(text) {
+  const lines = text.split('\n').filter(l => l.trim());
+  const data = [];
+
+  for (const line of lines) {
+    const dateMatch = line.match(/(\d{1,2})\/(\d{1,2})\(([日月火水木金土])\)/);
+    if (!dateMatch) continue;
+
+    const monthNum = parseInt(dateMatch[1]);
+    const dayNum = parseInt(dateMatch[2]);
+    const dow = dateMatch[3];
+    const isFull = line.includes('満席');
+
+    const slots = [];
+    if (!isFull) {
+      const slotRegex = /(\d{1,2}:\d{2})\s*[~〜]\s*(\d{1,2}:\d{2})(\s*\(([^)]*)\))?/g;
+      let match;
+      while ((match = slotRegex.exec(line)) !== null) {
+        const startStr = match[1];
+        const endStr = match[2];
+        const noteRaw = match[4] || '';
+
+        const [sH, sM] = startStr.split(':').map(Number);
+        const [eH, eM] = endStr.split(':').map(Number);
+        const minutes = (eH * 60 + eM) - (sH * 60 + sM);
+
+        const slot = { time: `${startStr}〜${endStr}`, minutes };
+        const note = noteRaw.replace(/^✂️\s*/, '').trim();
+        if (note) slot.note = note;
+        slots.push(slot);
+      }
+    }
+
+    data.push({
+      date: `${monthNum}/${dayNum}`,
+      dow, month: `${monthNum}月`,
+      day: dayNum, monthNum,
+      full: isFull, slots
+    });
+  }
+  return data;
+}
+
+// ============================================================
+// Rendering
+// ============================================================
+let DATA = [];
+let selectedMinutes = 0;
+
+function getDurationClass(m) {
+  if (m >= 60) return 'long';
+  if (m >= 30) return 'medium';
   return 'short';
 }
-
-function getDowClass(dow) {
-  if (dow === '土') return 'sat';
-  if (dow === '日') return 'sun';
+function getDowClass(d) {
+  if (d === '土') return 'sat';
+  if (d === '日') return 'sun';
   return '';
 }
-
-let selectedMinutes = 0;
+function getToday() {
+  const n = new Date();
+  return { month: n.getMonth() + 1, day: n.getDate() };
+}
 
 function render() {
   const container = document.getElementById('schedule');
   const noMatch = document.getElementById('noMatch');
   container.innerHTML = '';
   let hasVisible = false;
+  const today = getToday();
 
   DATA.forEach(d => {
-    const isPast = d.day < TODAY;
-    const isToday = d.day === TODAY;
+    const isPast = (d.monthNum < today.month) || (d.monthNum === today.month && d.day < today.day);
+    const isToday = d.monthNum === today.month && d.day === today.day;
 
-    // Filter slots
     let filteredSlots = d.slots;
     if (selectedMinutes > 0 && !d.full) {
       filteredSlots = d.slots.filter(s => s.minutes >= selectedMinutes);
     }
-
-    // If filtering and no slots match (and not full), check visibility
-    if (selectedMinutes > 0 && !d.full && filteredSlots.length === 0) {
-      return; // skip this day entirely
-    }
-    if (selectedMinutes > 0 && d.full) {
-      return; // skip full days when filtering
-    }
+    if (selectedMinutes > 0 && !d.full && filteredSlots.length === 0) return;
+    if (selectedMinutes > 0 && d.full) return;
 
     hasVisible = true;
-
     const card = document.createElement('div');
     card.className = `day-card ${d.full ? 'full' : 'available'} ${isPast ? 'past' : ''}`;
-
-    const slotsCount = filteredSlots.length;
 
     card.innerHTML = `
       <div class="day-header">
@@ -475,7 +451,7 @@ function render() {
         </div>
         ${d.full
           ? '<span class="status-badge full">✕ 満席</span>'
-          : `<span class="status-badge open">${slotsCount}枠</span>`
+          : `<span class="status-badge open">${filteredSlots.length}枠</span>`
         }
       </div>
       ${!d.full ? `
@@ -490,14 +466,17 @@ function render() {
         </div>
       ` : ''}
     `;
-
     container.appendChild(card);
   });
 
   noMatch.className = hasVisible ? 'no-match' : 'no-match visible';
+
+  if (DATA.length > 0) {
+    document.getElementById('dateRange').textContent =
+      `${DATA[0].date}〜${DATA[DATA.length - 1].date}`;
+  }
 }
 
-// Chip selection
 document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
@@ -507,7 +486,35 @@ document.querySelectorAll('.chip').forEach(chip => {
   });
 });
 
-render();
+// ============================================================
+// Fetch & Init
+// ============================================================
+async function init() {
+  const loading = document.getElementById('loading');
+  const errorMsg = document.getElementById('errorMsg');
+  const contentArea = document.getElementById('contentArea');
+
+  try {
+    // CORS proxy to fetch Google Docs text export
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(DOC_URL)}`;
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error('Fetch failed');
+    const text = await res.text();
+
+    DATA = parseDocText(text);
+    if (DATA.length === 0) throw new Error('No data parsed');
+
+    loading.style.display = 'none';
+    contentArea.classList.add('visible');
+    render();
+  } catch (e) {
+    console.error('Load error:', e);
+    loading.style.display = 'none';
+    errorMsg.style.display = 'block';
+  }
+}
+
+init();
 </script>
 </body>
 </html>
