@@ -344,9 +344,6 @@
 // ============================================================
 const DOC_ID = '1L31it-00hRpTAZ0JG_YcH3ONKc5WA4GO71uV9qOeIT0';
 
-// テキスト形式でエクスポート
-const DOC_URL = `https://docs.google.com/document/d/${DOC_ID}/export?format=txt`;
-
 // ============================================================
 // GASが書き出すテキストをパース
 // フォーマット例:
@@ -489,17 +486,55 @@ document.querySelectorAll('.chip').forEach(chip => {
 // ============================================================
 // Fetch & Init
 // ============================================================
+async function tryFetch(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+  return await res.text();
+}
+
 async function init() {
   const loading = document.getElementById('loading');
   const errorMsg = document.getElementById('errorMsg');
   const contentArea = document.getElementById('contentArea');
 
+  // Published Google Doc URL (plain text export)
+  const pubUrl = `https://docs.google.com/document/d/${DOC_ID}/export?format=txt`;
+
+  // Multiple CORS proxies as fallback
+  const proxyUrls = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(pubUrl)}`,
+    `https://corsproxy.io/?${encodeURIComponent(pubUrl)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(pubUrl)}`,
+  ];
+
+  let text = null;
+
+  for (const url of proxyUrls) {
+    try {
+      text = await tryFetch(url);
+      if (text) break;
+    } catch (e) {
+      console.warn('Proxy failed:', url, e.message);
+    }
+  }
+
+  if (!text) {
+    // Last resort: try fetching the published HTML version and extract text
+    try {
+      const pubHtmlUrl = `https://docs.google.com/document/d/e/2PACX-1vQxPNZ4gN1RdQaf9yCFT63mqMFpAEz8XBzaDxSMj3VkfEXYIXgYXikM5SLcF0ydPEzt5AISfKYxNZ3R/pub`;
+      const htmlProxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(pubHtmlUrl)}`;
+      const htmlText = await tryFetch(htmlProxy);
+      // Extract text from HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      text = doc.body.innerText || doc.body.textContent;
+    } catch (e) {
+      console.warn('HTML fallback failed:', e.message);
+    }
+  }
+
   try {
-    // CORS proxy to fetch Google Docs text export
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(DOC_URL)}`;
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error('Fetch failed');
-    const text = await res.text();
+    if (!text) throw new Error('All fetch methods failed');
 
     DATA = parseDocText(text);
     if (DATA.length === 0) throw new Error('No data parsed');
