@@ -498,44 +498,14 @@ async function init() {
   const errorMsg = document.getElementById('errorMsg');
   const contentArea = document.getElementById('contentArea');
 
-  // Published Google Doc URL (plain text export)
-  const pubUrl = `https://docs.google.com/document/d/${DOC_ID}/export?format=txt`;
-
-  // Multiple CORS proxies as fallback
-  const proxyUrls = [
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(pubUrl)}`,
-    `https://corsproxy.io/?${encodeURIComponent(pubUrl)}`,
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(pubUrl)}`,
-  ];
-
-  let text = null;
-
-  for (const url of proxyUrls) {
-    try {
-      text = await tryFetch(url);
-      if (text) break;
-    } catch (e) {
-      console.warn('Proxy failed:', url, e.message);
-    }
-  }
-
-  if (!text) {
-    // Last resort: try fetching the published HTML version and extract text
-    try {
-      const pubHtmlUrl = `https://docs.google.com/document/d/e/2PACX-1vQxPNZ4gN1RdQaf9yCFT63mqMFpAEz8XBzaDxSMj3VkfEXYIXgYXikM5SLcF0ydPEzt5AISfKYxNZ3R/pub`;
-      const htmlProxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(pubHtmlUrl)}`;
-      const htmlText = await tryFetch(htmlProxy);
-      // Extract text from HTML
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlText, 'text/html');
-      text = doc.body.innerText || doc.body.textContent;
-    } catch (e) {
-      console.warn('HTML fallback failed:', e.message);
-    }
-  }
+  const API_URL = 'https://script.google.com/macros/s/AKfycbxViSZKlnYQvGw6efJOz4QF7pQMkb22jyaCoFD0SpKr1vqfCwipIqq51XO3pmRkxyWC/exec';
 
   try {
-    if (!text) throw new Error('All fetch methods failed');
+    const res = await fetch(API_URL, {redirect: 'follow'});
+    const json = await res.json();
+    const text = json.text;
+
+    if (!text) throw new Error('No text');
 
     DATA = parseDocText(text);
     if (DATA.length === 0) throw new Error('No data parsed');
