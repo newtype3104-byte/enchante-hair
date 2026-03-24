@@ -62,6 +62,54 @@
   .no-match { display:none; text-align:center; padding:2rem 1rem; color:var(--text-dim); font-size:0.85rem; }
   .no-match.visible { display:block; }
   .content-area { display:none; } .content-area.visible { display:block; }
+
+  /* ── キャンセル待ちボタン ── */
+  .waitlist-area { padding:0.5rem 1rem 0.9rem; }
+  .waitlist-btn {
+    width:100%; padding:0.65rem; border:1.5px solid rgba(201,169,110,0.3);
+    border-radius:10px; background:rgba(201,169,110,0.08); color:var(--gold-light);
+    font-size:0.82rem; font-family:inherit; font-weight:600; cursor:pointer;
+    transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:0.4rem;
+  }
+  .waitlist-btn:hover { background:rgba(201,169,110,0.15); border-color:var(--gold); }
+  .waitlist-btn:active { transform:scale(0.98); }
+
+  /* ── モーダル ── */
+  .modal-overlay {
+    position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7);
+    z-index:1000; display:none; align-items:center; justify-content:center; padding:1rem;
+    backdrop-filter:blur(4px);
+  }
+  .modal-overlay.show { display:flex; }
+  .modal {
+    background:var(--card); border-radius:18px; padding:2rem 1.5rem;
+    max-width:340px; width:100%; border:1px solid var(--border); text-align:center;
+    animation:modalIn 0.25s ease;
+  }
+  @keyframes modalIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+  .modal-icon { font-size:2.5rem; margin-bottom:0.8rem; }
+  .modal-title { font-size:1.1rem; font-weight:700; margin-bottom:0.5rem; }
+  .modal-date { font-size:1rem; color:var(--gold); font-weight:700; margin-bottom:0.8rem; }
+  .modal-desc { font-size:0.8rem; color:var(--text-dim); line-height:1.6; margin-bottom:1.2rem; }
+  .modal-btn {
+    width:100%; padding:0.8rem; border:none; border-radius:12px;
+    font-size:0.9rem; font-family:inherit; font-weight:700; cursor:pointer; transition:all 0.2s;
+  }
+  .modal-btn.primary { background:var(--gold); color:var(--bg); margin-bottom:0.5rem; }
+  .modal-btn.primary:hover { background:var(--gold-light); }
+  .modal-btn.secondary { background:rgba(255,255,255,0.06); color:var(--text-dim); }
+  .modal-btn.secondary:hover { background:rgba(255,255,255,0.1); }
+  .modal-chat-link {
+    display:block; width:100%; padding:0.8rem; border:none; border-radius:12px;
+    background:var(--gold); color:var(--bg); font-size:0.9rem; font-family:inherit;
+    font-weight:700; cursor:pointer; text-decoration:none; text-align:center;
+    margin-bottom:0.5rem; transition:all 0.2s;
+  }
+  .modal-chat-link:hover { background:var(--gold-light); }
+  .modal-success { display:none; }
+  .modal-success.show { display:block; }
+  .modal-form { display:block; }
+  .modal-form.hide { display:none; }
 </style>
 </head>
 <body>
@@ -102,8 +150,52 @@
   ご予約・お問い合わせはLINEから<br>
   ENCHANTE' HAIR
 </div>
+
+<!-- キャンセル待ちモーダル（優先予約ユーザー用） -->
+<div class="modal-overlay" id="waitlistModal">
+  <div class="modal">
+    <div class="modal-form" id="modalForm">
+      <div class="modal-icon">🔔</div>
+      <div class="modal-title">キャンセル待ち登録</div>
+      <div class="modal-date" id="modalDate"></div>
+      <div class="modal-desc">空きが出たらLINEで自動通知します</div>
+      <button class="modal-btn primary" id="modalRegisterBtn">登録する</button>
+      <button class="modal-btn secondary" id="modalCancelBtn">やめる</button>
+    </div>
+    <div class="modal-success" id="modalSuccess">
+      <div class="modal-icon">✅</div>
+      <div class="modal-title" id="successMsg">登録しました</div>
+      <div class="modal-desc">空きが出たらLINEでお知らせします！</div>
+      <button class="modal-btn secondary" id="modalCloseBtn">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- キャンセル待ちモーダル（通常友だち用） -->
+<div class="modal-overlay" id="waitlistChatModal">
+  <div class="modal">
+    <div class="modal-icon">💬</div>
+    <div class="modal-title">キャンセル待ち</div>
+    <div class="modal-date" id="chatModalDate"></div>
+    <div class="modal-desc">キャンセル待ちはLINEチャットで<br>お申し込みください🙏</div>
+    <a class="modal-chat-link" href="https://line.me/R/oaMessage/@kbs5076i/?キャンセル待ち希望" id="chatLink">LINEチャットを開く</a>
+    <button class="modal-btn secondary" id="chatModalCloseBtn">閉じる</button>
+  </div>
+</div>
+
 <script>
 const DOC_ID = '1L31it-00hRpTAZ0JG_YcH3ONKc5WA4GO71uV9qOeIT0';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxxgLMI6EpUIQBtwzYC7232rBJME2wJA6_JzmckvjkYiMvZdI6KGl9l_lKn2w6zhgzL/exec';
+
+// URLパラメータ取得
+function getUrlParam(key) {
+  const params = new URLSearchParams(window.location.search);
+  return params.get(key) || '';
+}
+
+// 優先予約ユーザー判定（URLにuidがあるか）
+const USER_UID = getUrlParam('uid');
+const IS_PRIORITY = !!USER_UID;
 
 function parseDocText(text) {
   const lines = text.split('\n').filter(l => l.trim());
@@ -114,9 +206,10 @@ function parseDocText(text) {
     const monthNum = parseInt(dateMatch[1]);
     const dayNum = parseInt(dateMatch[2]);
     const dow = dateMatch[3];
-    const isFull = line.includes('満席');
+    const isClosed = line.includes('定休日');
+    const isFull = !isClosed && line.includes('満席');
     const slots = [];
-    if (!isFull) {
+    if (!isFull && !isClosed) {
       const slotRegex = /(\d{1,2}:\d{2})\s*[~〜]\s*(\d{1,2}:\d{2})(\s*\(([^)]*)\))?/g;
       let match;
       while ((match = slotRegex.exec(line)) !== null) {
@@ -130,7 +223,7 @@ function parseDocText(text) {
         slots.push(slot);
       }
     }
-    data.push({ date:`${monthNum}/${dayNum}`, dow, month:`${monthNum}月`, day:dayNum, monthNum, full:isFull, slots });
+    data.push({ date:`${monthNum}/${dayNum}`, dow, month:`${monthNum}月`, day:dayNum, monthNum, full:isFull, closed:isClosed, slots });
   }
   return data;
 }
@@ -139,6 +232,16 @@ let DATA = [], selectedMinutes = 0;
 function getDurationClass(m) { return m>=60?'long':m>=30?'medium':'short'; }
 function getDowClass(d) { return d==='土'?'sat':d==='日'?'sun':''; }
 function getToday() { const n=new Date(); return {month:n.getMonth()+1, day:n.getDate()}; }
+
+// 日付をyyyy-MM-dd形式に変換
+function toDateStr(monthNum, day) {
+  const year = new Date().getFullYear();
+  // 1月のデータが12月に表示される場合の補正
+  const today = new Date();
+  let y = year;
+  if (monthNum < today.getMonth() + 1 - 6) y = year + 1;
+  return `${y}-${String(monthNum).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
 
 function render() {
   const container = document.getElementById('schedule');
@@ -150,12 +253,25 @@ function render() {
     const isPast = (d.monthNum < today.month)||(d.monthNum===today.month && d.day<today.day);
     const isToday = d.monthNum===today.month && d.day===today.day;
     let filteredSlots = d.slots;
-    if (selectedMinutes>0 && !d.full) filteredSlots = d.slots.filter(s=>s.minutes>=selectedMinutes);
-    if (selectedMinutes>0 && !d.full && filteredSlots.length===0) return;
+    if (selectedMinutes>0 && !d.full && !d.closed) filteredSlots = d.slots.filter(s=>s.minutes>=selectedMinutes);
+    if (selectedMinutes>0 && !d.full && !d.closed && filteredSlots.length===0) return;
     if (selectedMinutes>0 && d.full) return;
+    if (selectedMinutes>0 && d.closed) return;
     hasVisible = true;
     const card = document.createElement('div');
-    card.className = `day-card ${d.full?'full':'available'} ${isPast?'past':''}`;
+    card.className = `day-card ${d.closed?'full':d.full?'full':'available'} ${isPast?'past':''}`;
+
+    // キャンセル待ちボタン（満席 & 未来日 & 定休日でないときのみ表示）
+    let waitlistHtml = '';
+    if (d.full && !d.closed && !isPast) {
+      waitlistHtml = `
+        <div class="waitlist-area">
+          <button class="waitlist-btn" data-date="${toDateStr(d.monthNum, d.day)}" data-label="${d.monthNum}月${d.day}日（${d.dow}）">
+            🔔 キャンセル待ち
+          </button>
+        </div>`;
+    }
+
     card.innerHTML = `
       <div class="day-header">
         <div class="day-left">
@@ -165,21 +281,101 @@ function render() {
             <span class="day-month">${d.month}</span>
           </div>
         </div>
-        ${d.full?'<span class="status-badge full">✕ 満席</span>':''}
+        ${d.closed?'<span class="status-badge full">定休日</span>':d.full?'<span class="status-badge full">✕ 満席</span>':''}
       </div>
-      ${!d.full?`<div class="slots">${filteredSlots.map(s=>`
+      ${!d.full && !d.closed?`<div class="slots">${filteredSlots.map(s=>`
         <span class="slot ${selectedMinutes>0?'highlight':''}">
           <span class="slot-duration ${getDurationClass(s.minutes)}"></span>
           ${s.time}
           ${s.note?`<span class="slot-note">✂️ ${s.note}</span>`:''}
         </span>`).join('')}</div>`:''}
+      ${waitlistHtml}
     `;
     container.appendChild(card);
   });
+
+  // キャンセル待ちボタンにイベントリスナーを設定
+  container.querySelectorAll('.waitlist-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dateStr = btn.dataset.date;
+      const dateLabel = btn.dataset.label;
+      if (IS_PRIORITY) {
+        showPriorityModal(dateStr, dateLabel);
+      } else {
+        showChatModal(dateLabel);
+      }
+    });
+  });
+
   noMatch.className = hasVisible?'no-match':'no-match visible';
   if (DATA.length>0) document.getElementById('dateRange').textContent = `${DATA[0].date}〜${DATA[DATA.length-1].date}`;
 }
 
+// ── 優先予約ユーザー用モーダル ──
+let currentWaitlistDate = '';
+function showPriorityModal(dateStr, dateLabel) {
+  currentWaitlistDate = dateStr;
+  document.getElementById('modalDate').textContent = dateLabel;
+  document.getElementById('modalForm').classList.remove('hide');
+  document.getElementById('modalSuccess').classList.remove('show');
+  document.getElementById('waitlistModal').classList.add('show');
+}
+
+document.getElementById('modalCancelBtn').addEventListener('click', () => {
+  document.getElementById('waitlistModal').classList.remove('show');
+});
+document.getElementById('modalCloseBtn').addEventListener('click', () => {
+  document.getElementById('waitlistModal').classList.remove('show');
+});
+document.getElementById('waitlistModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+});
+
+// 登録ボタン
+document.getElementById('modalRegisterBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('modalRegisterBtn');
+  btn.textContent = '登録中...';
+  btn.disabled = true;
+
+  try {
+    const url = `${API_URL}?action=registerWaitlist&uid=${encodeURIComponent(USER_UID)}&date=${encodeURIComponent(currentWaitlistDate)}`;
+    const res = await fetch(url, { redirect: 'follow' });
+    const json = await res.json();
+
+    if (json.success) {
+      document.getElementById('successMsg').textContent = json.message;
+      document.getElementById('modalForm').classList.add('hide');
+      document.getElementById('modalSuccess').classList.add('show');
+    } else {
+      document.getElementById('successMsg').textContent = json.message || '登録に失敗しました';
+      document.getElementById('modalForm').classList.add('hide');
+      document.getElementById('modalSuccess').classList.add('show');
+    }
+  } catch (e) {
+    alert('通信エラーが発生しました。もう一度お試しください。');
+  } finally {
+    btn.textContent = '登録する';
+    btn.disabled = false;
+  }
+});
+
+// ── 通常友だち用モーダル ──
+function showChatModal(dateLabel) {
+  document.getElementById('chatModalDate').textContent = dateLabel;
+  // LINEチャットリンクに日付を含める
+  const chatUrl = `https://line.me/R/oaMessage/@kbs5076i/?${encodeURIComponent(dateLabel + 'のキャンセル待ち希望')}`;
+  document.getElementById('chatLink').href = chatUrl;
+  document.getElementById('waitlistChatModal').classList.add('show');
+}
+
+document.getElementById('chatModalCloseBtn').addEventListener('click', () => {
+  document.getElementById('waitlistChatModal').classList.remove('show');
+});
+document.getElementById('waitlistChatModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+});
+
+// ── チップフィルター ──
 document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
     document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
@@ -189,11 +385,11 @@ document.querySelectorAll('.chip').forEach(chip => {
   });
 });
 
+// ── 初期化 ──
 async function init() {
   const loading = document.getElementById('loading');
   const errorMsg = document.getElementById('errorMsg');
   const contentArea = document.getElementById('contentArea');
-  const API_URL = 'https://script.google.com/macros/s/AKfycbxxgLMI6EpUIQBtwzYC7232rBJME2wJA6_JzmckvjkYiMvZdI6KGl9l_lKn2w6zhgzL/exec';
   try {
     const res = await fetch(API_URL, {redirect:'follow'});
     const json = await res.json();
