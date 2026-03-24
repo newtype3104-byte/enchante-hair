@@ -255,7 +255,6 @@ function render() {
     let filteredSlots = d.slots;
     if (selectedMinutes>0 && !d.full && !d.closed) filteredSlots = d.slots.filter(s=>s.minutes>=selectedMinutes);
     if (selectedMinutes>0 && !d.full && !d.closed && filteredSlots.length===0) return;
-    if (selectedMinutes>0 && d.full) return;
     if (selectedMinutes>0 && d.closed) return;
     hasVisible = true;
     const card = document.createElement('div');
