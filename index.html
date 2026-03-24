@@ -253,16 +253,20 @@ function render() {
     const isPast = (d.monthNum < today.month)||(d.monthNum===today.month && d.day<today.day);
     const isToday = d.monthNum===today.month && d.day===today.day;
     let filteredSlots = d.slots;
-    if (selectedMinutes>0 && !d.full && !d.closed) filteredSlots = d.slots.filter(s=>s.minutes>=selectedMinutes);
-    if (selectedMinutes>0 && !d.full && !d.closed && filteredSlots.length===0) return;
+    let noMatchForMenu = false;
+    if (selectedMinutes>0 && !d.full && !d.closed) {
+      filteredSlots = d.slots.filter(s=>s.minutes>=selectedMinutes);
+      if (filteredSlots.length===0 && d.slots.length>0) noMatchForMenu = true;
+      if (filteredSlots.length===0 && d.slots.length===0) noMatchForMenu = true;
+    }
     if (selectedMinutes>0 && d.closed) return;
     hasVisible = true;
     const card = document.createElement('div');
-    card.className = `day-card ${d.closed?'full':d.full?'full':'available'} ${isPast?'past':''}`;
+    card.className = `day-card ${d.closed?'full':(d.full||noMatchForMenu)?'full':'available'} ${isPast?'past':''}`;
 
-    // キャンセル待ちボタン（満席 & 未来日 & 定休日でないときのみ表示）
+    // キャンセル待ちボタン（満席 or メニュー不足 & 未来日 & 定休日でないときのみ表示）
     let waitlistHtml = '';
-    if (d.full && !d.closed && !isPast) {
+    if ((d.full || noMatchForMenu) && !d.closed && !isPast) {
       waitlistHtml = `
         <div class="waitlist-area">
           <button class="waitlist-btn" data-date="${toDateStr(d.monthNum, d.day)}" data-label="${d.monthNum}月${d.day}日（${d.dow}）">
@@ -280,9 +284,9 @@ function render() {
             <span class="day-month">${d.month}</span>
           </div>
         </div>
-        ${d.closed?'<span class="status-badge full">定休日</span>':d.full?'<span class="status-badge full">✕ 満席</span>':''}
+        ${d.closed?'<span class="status-badge full">定休日</span>':d.full?'<span class="status-badge full">✕ 満席</span>':noMatchForMenu?'<span class="status-badge full">空き不足</span>':''}
       </div>
-      ${!d.full && !d.closed?`<div class="slots">${filteredSlots.map(s=>`
+      ${!d.full && !d.closed && !noMatchForMenu?`<div class="slots">${filteredSlots.map(s=>`
         <span class="slot ${selectedMinutes>0?'highlight':''}">
           <span class="slot-duration ${getDurationClass(s.minutes)}"></span>
           ${s.time}
