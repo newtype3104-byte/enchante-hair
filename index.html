@@ -95,8 +95,6 @@
     width:100%; padding:0.8rem; border:none; border-radius:12px;
     font-size:0.9rem; font-family:inherit; font-weight:700; cursor:pointer; transition:all 0.2s;
   }
-  .modal-btn.primary { background:var(--gold); color:var(--bg); margin-bottom:0.5rem; }
-  .modal-btn.primary:hover { background:var(--gold-light); }
   .modal-btn.secondary { background:rgba(255,255,255,0.06); color:var(--text-dim); }
   .modal-btn.secondary:hover { background:rgba(255,255,255,0.1); }
   .modal-chat-link {
@@ -106,10 +104,6 @@
     margin-bottom:0.5rem; transition:all 0.2s;
   }
   .modal-chat-link:hover { background:var(--gold-light); }
-  .modal-success { display:none; }
-  .modal-success.show { display:block; }
-  .modal-form { display:block; }
-  .modal-form.hide { display:none; }
 </style>
 </head>
 <body>
@@ -151,27 +145,7 @@
   ENCHANTE' HAIR
 </div>
 
-<!-- キャンセル待ちモーダル（優先予約ユーザー用） -->
-<div class="modal-overlay" id="waitlistModal">
-  <div class="modal">
-    <div class="modal-form" id="modalForm">
-      <div class="modal-icon">🔔</div>
-      <div class="modal-title">キャンセル待ち登録</div>
-      <div class="modal-date" id="modalDate"></div>
-      <div class="modal-desc">空きが出たらLINEで自動通知します</div>
-      <button class="modal-btn primary" id="modalRegisterBtn">登録する</button>
-      <button class="modal-btn secondary" id="modalCancelBtn">やめる</button>
-    </div>
-    <div class="modal-success" id="modalSuccess">
-      <div class="modal-icon">✅</div>
-      <div class="modal-title" id="successMsg">登録しました</div>
-      <div class="modal-desc">空きが出たらLINEでお知らせします！</div>
-      <button class="modal-btn secondary" id="modalCloseBtn">閉じる</button>
-    </div>
-  </div>
-</div>
-
-<!-- キャンセル待ちモーダル（通常友だち用） -->
+<!-- キャンセル待ちモーダル（LINEチャット誘導・全員共通） -->
 <div class="modal-overlay" id="waitlistChatModal">
   <div class="modal">
     <div class="modal-icon">💬</div>
@@ -186,16 +160,6 @@
 <script>
 const DOC_ID = '1L31it-00hRpTAZ0JG_YcH3ONKc5WA4GO71uV9qOeIT0';
 const API_URL = 'https://script.google.com/macros/s/AKfycbxxgLMI6EpUIQBtwzYC7232rBJME2wJA6_JzmckvjkYiMvZdI6KGl9l_lKn2w6zhgzL/exec';
-
-// URLパラメータ取得
-function getUrlParam(key) {
-  const params = new URLSearchParams(window.location.search);
-  return params.get(key) || '';
-}
-
-// 優先予約ユーザー判定（URLにuidがあるか）
-const USER_UID = getUrlParam('uid');
-const IS_PRIORITY = !!USER_UID;
 
 function parseDocText(text) {
   const lines = text.split('\n').filter(l => l.trim());
@@ -236,11 +200,20 @@ function getToday() { const n=new Date(); return {month:n.getMonth()+1, day:n.ge
 // 日付をyyyy-MM-dd形式に変換
 function toDateStr(monthNum, day) {
   const year = new Date().getFullYear();
-  // 1月のデータが12月に表示される場合の補正
   const today = new Date();
   let y = year;
   if (monthNum < today.getMonth() + 1 - 6) y = year + 1;
   return `${y}-${String(monthNum).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
+
+// 選択中のメニュー名を取得
+function getSelectedMenuName() {
+  const chip = document.querySelector('.chip.active');
+  if (!chip) return '';
+  const clone = chip.cloneNode(true);
+  const t = clone.querySelector('.chip-time');
+  if (t) t.remove();
+  return clone.textContent.trim();
 }
 
 function render() {
@@ -248,21 +221,20 @@ function render() {
   const noMatch = document.getElementById('noMatch');
   container.innerHTML = '';
   let hasVisible = false;
-  const today = getToday();
+  const {month:todayM, day:todayD} = getToday();
+
   DATA.forEach(d => {
-    const isPast = (d.monthNum < today.month)||(d.monthNum===today.month && d.day<today.day);
-    const isToday = d.monthNum===today.month && d.day===today.day;
-    let filteredSlots = d.slots;
-    let noMatchForMenu = false;
-    if (selectedMinutes>0 && !d.full && !d.closed) {
-      filteredSlots = d.slots.filter(s=>s.minutes>=selectedMinutes);
-      if (filteredSlots.length===0 && d.slots.length>0) noMatchForMenu = true;
-      if (filteredSlots.length===0 && d.slots.length===0) noMatchForMenu = true;
-    }
-    if (selectedMinutes>0 && d.closed) return;
-    hasVisible = true;
+    const filteredSlots = selectedMinutes > 0 ? d.slots.filter(s => s.minutes >= selectedMinutes) : d.slots;
+    const noMatchForMenu = selectedMinutes > 0 && !d.full && !d.closed && d.slots.length > 0 && filteredSlots.length === 0;
+
+    if (!d.closed || selectedMinutes === 0) hasVisible = true;
+    if (d.closed && selectedMinutes > 0) return;
+
+    const isToday = d.monthNum === todayM && d.day === todayD;
+    const isPast = !isToday && (d.monthNum < todayM || (d.monthNum === todayM && d.day < todayD));
+
     const card = document.createElement('div');
-    card.className = `day-card ${d.closed?'full':(d.full||noMatchForMenu)?'full':'available'} ${isPast?'past':''}`;
+    card.className = `day-card ${d.closed?'':d.full||noMatchForMenu?'full':'available'} ${isPast?'past':''}`;
 
     // キャンセル待ちボタン（満席 or メニュー不足 & 未来日 & 定休日でないときのみ表示）
     let waitlistHtml = '';
@@ -297,16 +269,11 @@ function render() {
     container.appendChild(card);
   });
 
-  // キャンセル待ちボタンにイベントリスナーを設定
+  // キャンセル待ちボタン → 全員LINEチャットモーダルへ
   container.querySelectorAll('.waitlist-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const dateStr = btn.dataset.date;
       const dateLabel = btn.dataset.label;
-      if (IS_PRIORITY) {
-        showPriorityModal(dateStr, dateLabel);
-      } else {
-        showChatModal(dateLabel);
-      }
+      showChatModal(dateLabel);
     });
   });
 
@@ -314,59 +281,12 @@ function render() {
   if (DATA.length>0) document.getElementById('dateRange').textContent = `${DATA[0].date}〜${DATA[DATA.length-1].date}`;
 }
 
-// ── 優先予約ユーザー用モーダル ──
-let currentWaitlistDate = '';
-function showPriorityModal(dateStr, dateLabel) {
-  currentWaitlistDate = dateStr;
-  document.getElementById('modalDate').textContent = dateLabel;
-  document.getElementById('modalForm').classList.remove('hide');
-  document.getElementById('modalSuccess').classList.remove('show');
-  document.getElementById('waitlistModal').classList.add('show');
-}
-
-document.getElementById('modalCancelBtn').addEventListener('click', () => {
-  document.getElementById('waitlistModal').classList.remove('show');
-});
-document.getElementById('modalCloseBtn').addEventListener('click', () => {
-  document.getElementById('waitlistModal').classList.remove('show');
-});
-document.getElementById('waitlistModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
-});
-
-// 登録ボタン
-document.getElementById('modalRegisterBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('modalRegisterBtn');
-  btn.textContent = '登録中...';
-  btn.disabled = true;
-
-  try {
-    const url = `${API_URL}?action=registerWaitlist&uid=${encodeURIComponent(USER_UID)}&date=${encodeURIComponent(currentWaitlistDate)}`;
-    const res = await fetch(url, { redirect: 'follow' });
-    const json = await res.json();
-
-    if (json.success) {
-      document.getElementById('successMsg').textContent = json.message;
-      document.getElementById('modalForm').classList.add('hide');
-      document.getElementById('modalSuccess').classList.add('show');
-    } else {
-      document.getElementById('successMsg').textContent = json.message || '登録に失敗しました';
-      document.getElementById('modalForm').classList.add('hide');
-      document.getElementById('modalSuccess').classList.add('show');
-    }
-  } catch (e) {
-    alert('通信エラーが発生しました。もう一度お試しください。');
-  } finally {
-    btn.textContent = '登録する';
-    btn.disabled = false;
-  }
-});
-
-// ── 通常友だち用モーダル ──
+// ── LINEチャット誘導モーダル（メニュー名付き） ──
 function showChatModal(dateLabel) {
+  const menuName = getSelectedMenuName();
   document.getElementById('chatModalDate').textContent = dateLabel;
-  // LINEチャットリンクに日付を含める
-  const chatUrl = `https://line.me/R/oaMessage/@kbs5076i/?${encodeURIComponent(dateLabel + 'のキャンセル待ち希望')}`;
+  const menuText = menuName && menuName !== 'すべて' ? '\n希望メニュー：' + menuName : '';
+  const chatUrl = `https://line.me/R/oaMessage/@kbs5076i/?${encodeURIComponent(dateLabel + 'のキャンセル待ち希望' + menuText)}`;
   document.getElementById('chatLink').href = chatUrl;
   document.getElementById('waitlistChatModal').classList.add('show');
 }
