@@ -178,20 +178,36 @@ function parseDocText(text) {
       let match;
       while ((match = slotRegex.exec(line)) !== null) {
         const startStr = match[1], endStr = match[2], noteRaw = match[4] || '';
-        const [sH,sM] = startStr.split(':').map(Number);
-        const [eH,eM] = endStr.split(':').map(Number);
-        const minutes = (eH*60+eM)-(sH*60+sM);
-        const slot = { time: `${startStr}〜${endStr}`, minutes };
         const note = noteRaw.replace(/^✂️\s*/,'').trim();
-        if (note) slot.note = note;
-        slots.push(slot);
+        const expanded = expandRangeToSlots(startStr, endStr, note || null);
+        slots.push(...expanded);
       }
     }
     data.push({ date:`${monthNum}/${dayNum}`, dow, month:`${monthNum}月`, day:dayNum, monthNum, full:isFull, closed:isClosed, slots });
   }
   return data;
 }
-
+// ── 範囲→個別スロット展開（予約フォームと同ロジック GRID=30） ──
+const GRID = 30;
+function expandRangeToSlots(startStr, endStr, note) {
+  const [sH, sM] = startStr.split(':').map(Number);
+  const [eH, eM] = endStr.split(':').map(Number);
+  const startMin = sH * 60 + sM;
+  const endMin   = eH * 60 + eM;
+  const slots = [];
+  for (let t = startMin; t < endMin; t += GRID) {
+    const remain = endMin - t;
+    if (remain < GRID) break;          // 30分未満の端数は出さない
+    const hh = String(Math.floor(t / 60));
+    const mm = String(t % 60).padStart(2, '0');
+    const slot = { time: `${hh}:${mm}`, minutes: remain };
+    if (note) slot.note = note;
+    // remain が30〜59分なら「カットのみ」自動付与（noteが無い場合）
+    if (!note && remain < 60) slot.note = 'カットのみ';
+    slots.push(slot);
+  }
+  return slots;
+}
 let DATA = [], selectedMinutes = 0;
 function getDurationClass(m) { return m>=60?'long':m>=30?'medium':'short'; }
 function getDowClass(d) { return d==='土'?'sat':d==='日'?'sun':''; }
