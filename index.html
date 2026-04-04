@@ -195,16 +195,30 @@ function expandRangeToSlots(startStr, endStr, note) {
   const startMin = sH * 60 + sM;
   const endMin   = eH * 60 + eM;
   const slots = [];
-  for (let t = startMin; t < endMin; t += GRID) {
+
+  function pushSlot(t) {
     const remain = endMin - t;
-    if (remain < GRID) break;          // 30分未満の端数は出さない
+    if (remain < GRID) return;
     const hh = String(Math.floor(t / 60));
     const mm = String(t % 60).padStart(2, '0');
     const slot = { time: `${hh}:${mm}`, minutes: remain };
     if (note) slot.note = note;
-    // remain が30〜59分なら「カットのみ」自動付与（noteが無い場合）
     if (!note && remain < 60) slot.note = 'カットのみ';
     slots.push(slot);
+  }
+
+  let t = startMin;
+  // 開始がグリッド外（例:14:50）→ 2つ表示してからグリッドに乗せる
+  if (t % GRID !== 0) {
+    pushSlot(t);                                      // 14:50
+    t += GRID;                                         // 15:20（まだグリッド外）
+    pushSlot(t);
+    t = Math.ceil((t + GRID) / GRID) * GRID;           // 16:00（グリッドに乗った）
+  }
+  // グリッド上：通常の30分刻み
+  while (t + GRID <= endMin) {
+    pushSlot(t);
+    t += GRID;
   }
   return slots;
 }
