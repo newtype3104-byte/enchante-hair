@@ -187,8 +187,9 @@ function parseDocText(text) {
   }
   return data;
 }
-// ── 範囲→個別スロット展開（予約フォームと同ロジック GRID=30） ──
+// ── 範囲→個別スロット展開（予約フォームと同ロジック GRID=30, INTERVAL=40） ──
 const GRID = 30;
+const INTERVAL = 40;
 function expandRangeToSlots(startStr, endStr, note) {
   const [sH, sM] = startStr.split(':').map(Number);
   const [eH, eM] = endStr.split(':').map(Number);
@@ -208,17 +209,21 @@ function expandRangeToSlots(startStr, endStr, note) {
   }
 
   let t = startMin;
-  // 開始がグリッド外（例:14:50）→ 2つ表示してからグリッドに乗せる
-  if (t % GRID !== 0) {
-    pushSlot(t);                                      // 14:50
-    t += GRID;                                         // 15:20（まだグリッド外）
-    pushSlot(t);
-    t = Math.ceil((t + GRID) / GRID) * GRID;           // 16:00（グリッドに乗った）
-  }
-  // グリッド上：通常の30分刻み
-  while (t + GRID <= endMin) {
-    pushSlot(t);
-    t += GRID;
+  if (t % GRID === 0) {
+    // グリッド上：通常の30分刻み
+    while (t + GRID <= endMin) { pushSlot(t); t += GRID; }
+  } else {
+    // オフグリッド：INTERVAL(40)で刻んでグリッドに乗せる
+    while (t + GRID <= endMin) {
+      pushSlot(t);
+      var next = t + INTERVAL;
+      if (next % GRID === 0) {
+        t = next;
+        while (t + GRID <= endMin) { pushSlot(t); t += GRID; }
+        break;
+      }
+      t = next;
+    }
   }
   return slots;
 }
