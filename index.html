@@ -204,7 +204,7 @@ function expandRangeToSlots(startStr, endStr, note) {
     const mm = String(t % 60).padStart(2, '0');
     const slot = { time: `${hh}:${mm}`, minutes: remain };
     if (note) slot.note = note;
-    if (!note && remain < 60) slot.note = 'カットのみ';
+    if (!note && remain < 40) slot.note = 'カットのみ';
     slots.push(slot);
   }
 
