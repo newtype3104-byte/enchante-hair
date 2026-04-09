@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>My Style | Enchanté'-Hair</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Noto+Sans+JP:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script charset="utf-8" src="https://static.line-signon.com/API/liff/edge/2/sdk.js"></script>
+<style>
+  :root {
+    --bg:         #f9f7f3;
+    --bg-card:    #ffffff;
+    --bg-warm:    #f3efe8;
+    --forest:     #1a3d2b;
+    --forest-mid: #2a5c40;
+    --forest-soft:#3d7a56;
+    --gold:       #c9a84c;
+    --gold-light: #e8d5a0;
+    --gold-pale:  #f5ecd4;
+    --text-dark:  #1a1a14;
+    --text-mid:   #4a4535;
+    --text-light: #8a7d6a;
+    --text-muted: #b5a998;
+    --border:     #e8e2d8;
+    --border-light:#f0ece4;
+    --shadow-sm:  0 1px 3px rgba(26,26,20,0.06);
+    --shadow-md:  0 4px 16px rgba(26,26,20,0.08);
+    --shadow-lg:  0 8px 32px rgba(26,26,20,0.10);
+    --radius:     12px;
+    --radius-sm:  8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { font-size: 16px; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 400;
+    background: var(--bg);
+    color: var(--text-dark);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Loading Screen ── */
+  .loading-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+  .loading-screen.hidden {
+    opacity: 0; visibility: hidden; pointer-events: none;
+  }
+  .loading-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem; font-weight: 400;
+    color: var(--forest); letter-spacing: 0.08em;
+    margin-bottom: 1.5rem;
+  }
+  .loading-spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Error Screen ── */
+  .error-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 80vh; padding: 2rem; text-align: center;
+  }
+  .error-screen.active { display: flex; }
+  .error-icon {
+    width: 56px; height: 56px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1.2rem; color: var(--text-light); font-size: 1.4rem;
+  }
+  .error-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem; color: var(--text-mid);
+    margin-bottom: 0.6rem;
+  }
+  .error-msg {
+    font-size: 0.78rem; color: var(--text-light);
+    line-height: 1.8; font-weight: 300;
+  }
+
+  /* ── Main Container ── */
+  .main { display: none; }
+  .main.active { display: block; }
+
+  /* ── Header (Customer Profile) ── */
+  .profile-header {
+    background: linear-gradient(135deg, var(--forest) 0%, var(--forest-mid) 100%);
+    padding: 2rem 1.5rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .profile-header::before {
+    content: '';
+    position: absolute; top: -40%; right: -20%;
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .profile-header::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 24px;
+    background: var(--bg);
+    border-radius: 24px 24px 0 0;
+  }
+  .profile-brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.72rem; font-weight: 400;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.2em; text-transform: uppercase;
+    margin-bottom: 1.2rem;
+  }
+  .profile-name {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 1.3rem; font-weight: 500;
+    color: #ffffff; letter-spacing: 0.04em;
+    margin-bottom: 0.3rem;
+  }
+  .profile-name-en {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.82rem; font-weight: 300; font-style: italic;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.06em;
+    margin-bottom: 1.4rem;
+  }
+  .profile-stats {
+    display: flex; gap: 1rem; align-items: center;
+  }
+  .stat-chip {
+    display: flex; align-items: center; gap: 0.4rem;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 0.4rem 0.9rem;
+  }
+  .stat-chip-icon {
+    font-size: 0.72rem; opacity: 0.7;
+  }
+  .stat-chip-label {
+    font-size: 0.68rem; color: rgba(255,255,255,0.55);
+    font-weight: 300;
+  }
+  .stat-chip-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.88rem; color: #ffffff;
+    font-weight: 500;
+  }
+  .stat-chip.rank {
+    background: linear-gradient(135deg, rgba(201,168,76,0.25), rgba(201,168,76,0.1));
+    border-color: rgba(201,168,76,0.35);
+  }
+  .stat-chip.rank .stat-chip-value {
+    color: var(--gold-light);
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Section Title ── */
+  .section-bar {
+    padding: 1.2rem 1.5rem 0.8rem;
+    display: flex; align-items: baseline; justify-content: space-between;
+  }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem; font-weight: 400;
+    color: var(--text-dark); letter-spacing: 0.06em;
+  }
+  .section-count {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.82rem; color: var(--text-light);
+    font-weight: 300;
+  }
+
+  /* ── Style Cards ── */
+  .cards-list {
+    padding: 0 1rem 1rem;
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .style-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+    overflow: hidden;
+    opacity: 0; transform: translateY(16px);
+    animation: cardIn 0.45s ease forwards;
+  }
+  @keyframes cardIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Card Header */
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.9rem 1rem 0.6rem;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .card-date {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.95rem; color: var(--text-dark);
+    font-weight: 500; letter-spacing: 0.03em;
+  }
+  .card-visit-badge {
+    font-size: 0.62rem; font-weight: 500;
+    color: var(--forest-soft);
+    background: rgba(61,122,86,0.08);
+    padding: 0.2rem 0.6rem;
+    border-radius: 10px; letter-spacing: 0.04em;
+  }
+
+  /* Photo Grid */
+  .card-photos {
+  /* Photo Layout: Main large + Sub thumbnails */
+  .card-photos {
+    background: var(--border-light);
+    padding: 3px;
+  }
+  .card-photo-main {
+    position: relative; overflow: hidden;
+    background: var(--bg-warm);
+    aspect-ratio: 4 / 3;
+  }
+  .card-photo-main img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .card-photo-subs {
+    display: flex; gap: 3px;
+    margin-top: 3px;
+  }
+  .card-photo-sub {
+    position: relative; overflow: hidden;
+    background: var(--bg-warm);
+    flex: 1;
+    aspect-ratio: 1 / 1;
+  }
+  .card-photo-sub img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .card-photo-label {
+    position: absolute; bottom: 0; left: 0;
+    font-size: 0.56rem; font-weight: 500;
+    color: #fff; background: rgba(26,61,43,0.7);
+    padding: 0.15rem 0.5rem;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .no-photo {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 0.72rem;
+    font-weight: 300; aspect-ratio: 4 / 3;
+    background: var(--bg-warm);
+  }
+
+  /* Card Body (details) */
+  .card-body { padding: 0.9rem 1rem; }
+  .card-style-name {
+    font-size: 0.92rem; font-weight: 500;
+    color: var(--text-dark); margin-bottom: 0.6rem;
+    line-height: 1.5;
+  }
+  .card-details {
+    display: flex; flex-wrap: wrap; gap: 0.35rem;
+    margin-bottom: 0.7rem;
+  }
+  .detail-tag {
+    font-size: 0.65rem; font-weight: 400;
+    color: var(--text-mid);
+    background: var(--bg-warm);
+    padding: 0.22rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-light);
+  }
+  .detail-tag .tag-label {
+    color: var(--text-light); margin-right: 0.2rem;
+  }
+
+  /* Card memo / suggestion */
+  .card-note {
+    font-size: 0.75rem; color: var(--text-mid);
+    line-height: 1.8; font-weight: 300;
+    padding: 0.6rem 0.8rem;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--gold-light);
+  }
+  .card-note-label {
+    font-size: 0.62rem; font-weight: 500;
+    color: var(--gold); letter-spacing: 0.06em;
+    margin-bottom: 0.3rem; display: block;
+  }
+  .card-suggestion {
+    margin-top: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    background: rgba(201,168,76,0.06);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(201,168,76,0.15);
+  }
+  .card-suggestion-label {
+    font-size: 0.62rem; font-weight: 500;
+    color: var(--forest-soft); letter-spacing: 0.06em;
+    margin-bottom: 0.25rem; display: block;
+  }
+  .card-suggestion-text {
+    font-size: 0.75rem; color: var(--text-mid);
+    line-height: 1.7; font-weight: 300;
+  }
+
+  /* ── Sticky CTA ── */
+  .sticky-cta {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 0.8rem 1rem calc(0.8rem + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 60%, transparent);
+    z-index: 100;
+  }
+  .btn-reserve {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    width: 100%;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.88rem; font-weight: 500;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--forest) 0%, var(--forest-mid) 100%);
+    border: none; border-radius: var(--radius);
+    padding: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(26,61,43,0.3);
+    transition: all 0.2s ease;
+    letter-spacing: 0.06em;
+  }
+  .btn-reserve:active {
+    transform: scale(0.98);
+  }
+  .btn-reserve svg {
+    width: 18px; height: 18px; fill: #06c755;
+  }
+
+  /* ── Bottom Spacer ── */
+  .bottom-spacer { height: 5rem; }
+
+  /* ── Photo Modal ── */
+  .photo-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 500;
+    display: none; align-items: center; justify-content: center;
+    padding: 1rem;
+  }
+  .photo-modal.active { display: flex; }
+  .photo-modal img {
+    max-width: 100%; max-height: 85vh;
+    object-fit: contain; border-radius: 4px;
+  }
+  .photo-modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.15);
+    border: none; border-radius: 50%;
+    color: #fff; font-size: 1.2rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-logo">Enchanté'-Hair</div>
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- Error -->
+<div class="error-screen" id="errorScreen">
+  <div class="error-icon">!</div>
+  <div class="error-title">Access Error</div>
+  <p class="error-msg" id="errorMsg">
+    このページはLINEアプリから<br>アクセスしてください。
+  </p>
+</div>
+
+<!-- Main Content -->
+<div class="main" id="mainContent">
+
+  <!-- Profile Header -->
+  <div class="profile-header">
+    <div class="profile-brand">My Style</div>
+    <div class="profile-name" id="customerName">—</div>
+    <div class="profile-name-en" id="customerNameEn">loading...</div>
+    <div class="profile-stats">
+      <div class="stat-chip">
+        <span class="stat-chip-icon">✂️</span>
+        <span class="stat-chip-value" id="visitCount">—</span>
+        <span class="stat-chip-label">回来店</span>
+      </div>
+      <div class="stat-chip rank">
+        <span class="stat-chip-icon">★</span>
+        <span class="stat-chip-value" id="rankLabel">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section Title -->
+  <div class="section-bar">
+    <div class="section-title">Style History</div>
+    <div class="section-count" id="totalCount"></div>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards-list" id="cardsList"></div>
+
+  <!-- Bottom Spacer -->
+  <div class="bottom-spacer"></div>
+
+  <!-- Sticky CTA -->
+  <div class="sticky-cta">
+    <button class="btn-reserve" onclick="openReserve()">
+      <svg viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .635.285.635.634v3.869c0 .35-.286.635-.635.635H4.635A.635.635 0 014 14.366V10.497c0-.349.286-.634.635-.634h14.73zM12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/></svg>
+      <span>LINEで予約する</span>
+    </button>
+  </div>
+</div>
+
+<!-- Photo Modal -->
+<div class="photo-modal" id="photoModal" onclick="closeModal()">
+  <button class="photo-modal-close" onclick="closeModal()">✕</button>
+  <img id="modalImg" src="" alt="">
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const LIFF_ID  = '2009018401-1ChGezZP';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbxWXx6376RLQs5pC0aTFmyBod9mctk-4csIYZV48waAlK3ipGPI8WfwEYsVers8_ugY/exec';
+const LINE_RESERVE_URL = 'https://lin.ee/kbs5076i';
+const PAGE_LIMIT = 3;
+
+let currentPage = 1;
+let customerData = null;
+let isLoading = false;
+
+// ============================================================
+// LIFF INIT
+// ============================================================
+async function initApp() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+
+    let uid = '';
+
+    if (liff.isInClient() || liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      uid = profile.userId;
+    } else {
+      // ブラウザ直アクセス時：URLパラメータでテスト
+      const params = new URLSearchParams(location.search);
+      uid = params.get('uid') || '';
+    }
+
+    if (!uid) {
+      showError('LINEログインが必要です。<br>LINEアプリから再度お試しください。');
+      return;
+    }
+
+    await fetchData(uid, 1);
+
+  } catch (err) {
+    console.error('LIFF init error:', err);
+    // LIFF初期化失敗時もURLパラメータでフォールバック
+    const params = new URLSearchParams(location.search);
+    const uid = params.get('uid') || '';
+    if (uid) {
+      await fetchData(uid, 1);
+    } else {
+      // デモモード（プレビュー用）
+      loadDemo();
+    }
+  }
+}
+
+// ============================================================
+// API CALL
+// ============================================================
+async function fetchData(uid, page) {
+  isLoading = true;
+  try {
+    const url = `${API_BASE}?uid=${uid}&page=${page}&limit=${PAGE_LIMIT}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.error) {
+      showError('お客様データが見つかりませんでした。<br>LINE連携がまだの場合は<br>スタッフにお声がけください。');
+      return;
+    }
+
+    if (page === 1) {
+      customerData = data;
+      renderHeader(data.customer);
+      document.getElementById('totalCount').textContent =
+        '直近 ' + data.records.length + ' 件';
+    }
+
+    renderCards(data.records, page);
+
+    currentPage = page;
+
+    // 画面表示
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('mainContent').classList.add('active');
+
+  } catch (err) {
+    console.error('API error:', err);
+    showError('データの読み込みに失敗しました。<br>しばらくしてから再度お試しください。');
+  }
+  isLoading = false;
+}
+
+// ============================================================
+// RENDER HEADER
+// ============================================================
+function renderHeader(c) {
+  document.getElementById('customerName').textContent = c.name || '—';
+  document.getElementById('customerNameEn').textContent = 'valued customer';
+  document.getElementById('visitCount').textContent = c.visits || '0';
+  document.getElementById('rankLabel').textContent = c.rank || 'STANDARD';
+}
+
+// ============================================================
+// RENDER CARDS
+// ============================================================
+function renderCards(records, page) {
+  const list = document.getElementById('cardsList');
+  if (page === 1) list.innerHTML = '';
+
+  records.forEach((r, idx) => {
+    const card = document.createElement('div');
+    card.className = 'style-card';
+    card.style.animationDelay = (idx * 0.08) + 's';
+
+    // -- Photos: Main large + Sub thumbnails --
+    const mainPhoto = r.photos && r.photos.main ? r.photos.main : '';
+    const subPhotos = [];
+    const subLabels = { back: 'バック', front: 'フロント', before: 'ビフォー' };
+    ['back', 'front', 'before'].forEach(key => {
+      if (r.photos && r.photos[key]) {
+        subPhotos.push({ url: r.photos[key], label: subLabels[key] });
+      }
+    });
+
+    let photosHtml = '';
+    if (mainPhoto) {
+      let subsHtml = '';
+      if (subPhotos.length > 0) {
+        subsHtml = `<div class="card-photo-subs">` +
+          subPhotos.map(p =>
+            `<div class="card-photo-sub">
+               <img src="${p.url}" alt="${p.label}" loading="lazy" onclick="openModal('${p.url}')" onerror="this.parentElement.style.display='none'">
+               <span class="card-photo-label">${p.label}</span>
+             </div>`
+          ).join('') + `</div>`;
+      }
+      photosHtml = `<div class="card-photos">
+        <div class="card-photo-main">
+          <img src="${mainPhoto}" alt="メイン" loading="lazy" onclick="openModal('${mainPhoto}')" onerror="this.parentElement.innerHTML='<div class=no-photo>📷</div>'">
+          <span class="card-photo-label">メイン</span>
+        </div>
+        ${subsHtml}
+      </div>`;
+    } else {
+      photosHtml = `<div class="no-photo">📷 写真なし</div>`;
+    }
+
+    // -- Detail Tags --
+    const tags = [];
+    if (r.side)      tags.push({ l: 'サイド', v: r.side });
+    if (r.top)       tags.push({ l: 'トップ', v: r.top });
+    if (r.back)      tags.push({ l: 'バック', v: r.back });
+    if (r.technique) tags.push({ l: 'テクニック', v: r.technique });
+    if (r.product)   tags.push({ l: '整髪料', v: r.product });
+    if (r.nextGuide) tags.push({ l: '次回目安', v: r.nextGuide });
+
+    const tagsHtml = tags.map(t =>
+      `<span class="detail-tag"><span class="tag-label">${t.l}</span>${t.v}</span>`
+    ).join('');
+
+    // -- Memo --
+    let noteHtml = '';
+    if (r.memo) {
+      noteHtml = `
+        <div class="card-note">
+          <span class="card-note-label">STYLIST NOTE</span>
+          ${escHtml(r.memo)}
+        </div>`;
+    }
+
+    // -- Next Suggestion --
+    let suggestHtml = '';
+    if (r.nextSuggest) {
+      suggestHtml = `
+        <div class="card-suggestion">
+          <span class="card-suggestion-label">💡 NEXT STYLE PROPOSAL</span>
+          <div class="card-suggestion-text">${escHtml(r.nextSuggest)}</div>
+        </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="card-head">
+        <div class="card-date">${r.date || '—'}</div>
+        ${r.visitNum ? `<span class="card-visit-badge">${r.visitNum}回目</span>` : ''}
+      </div>
+      ${photosHtml}
+      <div class="card-body">
+        ${r.style ? `<div class="card-style-name">${escHtml(r.style)}</div>` : ''}
+        ${tagsHtml ? `<div class="card-details">${tagsHtml}</div>` : ''}
+        ${noteHtml}
+        ${suggestHtml}
+      </div>`;
+
+    list.appendChild(card);
+  });
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function showError(msg) {
+  document.getElementById('loadingScreen').classList.add('hidden');
+  document.getElementById('errorMsg').innerHTML = msg;
+  document.getElementById('errorScreen').classList.add('active');
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function openReserve() {
+  if (liff.isInClient()) {
+    liff.openWindow({ url: LINE_RESERVE_URL, external: false });
+  } else {
+    window.open(LINE_RESERVE_URL, '_blank');
+  }
+}
+
+function openModal(url) {
+  event.stopPropagation();
+  document.getElementById('modalImg').src = url;
+  document.getElementById('photoModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('photoModal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// ============================================================
+// DEMO MODE（プレビュー用）
+// ============================================================
+function loadDemo() {
+  const demoData = {
+    customer: { id: 57, name: 'はちや さとし', visits: 57, rank: 'GOLD' },
+    records: [
+      {
+        id: 1, date: '2025/04/05', style: 'ビジネスショート × フェード',
+        side: '6mm → 3mm フェード', top: '5cm 前下がり', back: 'グラデーション',
+        technique: 'バリカン＋シザー', product: 'Enchanté 雅 Luxe',
+        nextGuide: '3週間後', nextSuggest: '次回はサイドをもう少し短めに攻めて、よりシャープな印象に仕上げましょう。トップは現状キープで◎',
+        memo: 'フェードの境目をいつもより丁寧にぼかし。お客様のクセを活かしてトップに自然な動きを出した。スタイリング剤は雅Luxeを少量で仕上げ。',
+        visitNum: 57, rank: 'GOLD',
+        photos: { main: '', back: '', front: '', before: '' }
+      },
+      {
+        id: 2, date: '2025/03/15', style: '英国紳士バーバースタイル',
+        side: '9mm → 6mm', top: '7cm サイドパート', back: 'ナチュラル',
+        technique: 'シザーメイン', product: 'Enchanté Clair',
+        nextGuide: '4週間後', nextSuggest: 'パーマで動きを出すのもおすすめです',
+        memo: 'クラシカルなサイドパートで仕上げ。七三の分け目を自然に。',
+        visitNum: 56, rank: 'GOLD',
+        photos: { main: '', back: '', front: '', before: '' }
+      },
+      {
+        id: 3, date: '2025/02/22', style: 'ナチュラルマッシュショート',
+        side: '刈り上げなし 耳周りすっきり', top: '6cm 重め', back: 'すっきり',
+        technique: 'シザーのみ', product: 'Enchanté Clair',
+        nextGuide: '3〜4週間後', nextSuggest: '',
+        memo: '少し印象を変えたいとのことで、フェードなしのナチュラル路線に。好評だったので次回も候補に。',
+        visitNum: 55, rank: 'GOLD',
+        photos: { main: '', back: '', front: '', before: '' }
+      }
+    ],
+    pagination: { page: 1, limit: 5, total: 3, hasMore: false }
+  };
+
+  customerData = demoData;
+  renderHeader(demoData.customer);
+  document.getElementById('totalCount').textContent = '直近 ' + demoData.records.length + ' 件';
+  renderCards(demoData.records, 1);
+  document.getElementById('loadingScreen').classList.add('hidden');
+  document.getElementById('mainContent').classList.add('active');
+}
+
+// ============================================================
+// START
+// ============================================================
+document.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>
