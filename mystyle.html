@@ -437,7 +437,7 @@ function renderCards(records, page) {
 
     var dateStr = fmtDate(r.date);
 
-    // Photos
+    // Photos: mainが非画像の場合、サブ写真から昇格
     var mainPhoto = (r.photos && r.photos.main) ? proxyImgUrl(r.photos.main) : '';
     var subs = [];
     var subMap = {back:'バック',front:'フロント',before:'ビフォー'};
@@ -447,6 +447,10 @@ function renderCards(records, page) {
         if (u) subs.push({url:u, label:subMap[k]});
       }
     });
+    // mainが空ならサブの先頭をメインに昇格
+    if (!mainPhoto && subs.length > 0) {
+      mainPhoto = subs.shift().url;
+    }
 
     var photosHtml = '';
     if (mainPhoto) {
@@ -553,11 +557,23 @@ function extractFileId(url) {
   return '';
 }
 
+// スライド・ドキュメント等の非画像URLを判定
+function isImageUrl(url) {
+  if (!url) return false;
+  var s = String(url);
+  if (s.indexOf('presentation') !== -1) return false;
+  if (s.indexOf('document') !== -1) return false;
+  if (s.indexOf('spreadsheets') !== -1) return false;
+  if (s.indexOf('forms') !== -1) return false;
+  if (!extractFileId(s)) return false;
+  return true;
+}
+
 // fileId → LINE WebView対応の画像URLに変換
 function proxyImgUrl(url) {
+  if (!isImageUrl(url)) return '';
   var fid = extractFileId(url);
-  if (!fid) return url;
-  // weserv.nl経由でGoogle Drive画像をプロキシ
+  if (!fid) return '';
   return 'https://images.weserv.nl/?url=drive.google.com/uc%3Fid%3D' + fid + '%26export%3Dview&w=800';
 }
 
