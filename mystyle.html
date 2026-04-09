@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>My Style | Enchanté'-Hair</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -438,11 +439,11 @@ function renderCards(records, page) {
     var dateStr = fmtDate(r.date);
 
     // Photos
-    var mainPhoto = (r.photos && r.photos.main) ? r.photos.main : '';
+    var mainPhoto = (r.photos && r.photos.main) ? fixPhotoUrl(r.photos.main) : '';
     var subs = [];
     var subMap = {back:'バック',front:'フロント',before:'ビフォー'};
     ['back','front','before'].forEach(function(k) {
-      if (r.photos && r.photos[k]) subs.push({url:r.photos[k], label:subMap[k]});
+      if (r.photos && r.photos[k]) subs.push({url:fixPhotoUrl(r.photos[k]), label:subMap[k]});
     });
 
     var photosHtml = '';
@@ -536,6 +537,18 @@ function showError(msg) {
   document.getElementById('loadingScreen').classList.add('hidden');
   document.getElementById('errorMsg').innerHTML = msg;
   document.getElementById('errorScreen').classList.add('active');
+}
+
+// Google Drive画像URL → LINE WebView対応形式に変換
+function fixPhotoUrl(url) {
+  if (!url) return '';
+  // lh3.googleusercontent.com/d/{fileId} → drive.google.com/thumbnail?id={fileId}&sz=w800
+  var m = url.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800';
+  // drive.google.com/uc?export=view&id={fileId} → thumbnail形式
+  m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800';
+  return url;
 }
 
 function esc(s) {
