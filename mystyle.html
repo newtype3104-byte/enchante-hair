@@ -437,13 +437,13 @@ function renderCards(records, page) {
 
     var dateStr = fmtDate(r.date);
 
-    // Photos: mainが非画像の場合、サブ写真から昇格
-    var mainPhoto = (r.photos && r.photos.main) ? proxyImgUrl(r.photos.main) : '';
+    // Photos: base64データを直接表示
+    var mainPhoto = (r.photos && r.photos.main) ? photoUrl(r.photos.main) : '';
     var subs = [];
     var subMap = {back:'バック',front:'フロント',before:'ビフォー'};
     ['back','front','before'].forEach(function(k) {
       if (r.photos && r.photos[k]) {
-        var u = proxyImgUrl(r.photos[k]);
+        var u = photoUrl(r.photos[k]);
         if (u) subs.push({url:u, label:subMap[k]});
       }
     });
@@ -459,14 +459,14 @@ function renderCards(records, page) {
         subsHtml = '<div class="card-photo-subs">';
         subs.forEach(function(p) {
           subsHtml += '<div class="card-photo-sub">' +
-            '<img src="'+p.url+'" alt="'+p.label+'" loading="lazy" onclick="openModal(\''+p.url+'\')" onerror="this.parentElement.style.display=\'none\'">' +
+            '<img src="'+p.url+'" alt="'+p.label+'" loading="lazy" class="photo-tap">' +
             '<span class="card-photo-label">'+p.label+'</span></div>';
         });
         subsHtml += '</div>';
       }
       photosHtml = '<div class="card-photos">' +
         '<div class="card-photo-main">' +
-        '<img src="'+mainPhoto+'" alt="メイン" loading="lazy" onclick="openModal(\''+mainPhoto+'\')">' +
+        '<img src="'+mainPhoto+'" alt="メイン" loading="lazy" class="photo-tap">' +
         '<span class="card-photo-label">メイン</span></div>' +
         subsHtml + '</div>';
     } else {
@@ -545,36 +545,13 @@ function showError(msg) {
   document.getElementById('errorScreen').classList.add('active');
 }
 
-// Google Drive URL → fileId抽出
-function extractFileId(url) {
+// 写真URLをそのまま返す（APIがbase64で返すため変換不要）
+// スライド・ドキュメントURLはスキップ
+function photoUrl(url) {
   if (!url) return '';
-  var m = url.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
-  if (m) return m[1];
-  m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (m) return m[1];
-  m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (m) return m[1];
+  // data:URI（base64）ならそのまま
+  if (url.indexOf('data:image') === 0) return url;
   return '';
-}
-
-// スライド・ドキュメント等の非画像URLを判定
-function isImageUrl(url) {
-  if (!url) return false;
-  var s = String(url);
-  if (s.indexOf('presentation') !== -1) return false;
-  if (s.indexOf('document') !== -1) return false;
-  if (s.indexOf('spreadsheets') !== -1) return false;
-  if (s.indexOf('forms') !== -1) return false;
-  if (!extractFileId(s)) return false;
-  return true;
-}
-
-// fileId → LINE WebView対応の画像URLに変換
-function proxyImgUrl(url) {
-  if (!isImageUrl(url)) return '';
-  var fid = extractFileId(url);
-  if (!fid) return '';
-  return 'https://images.weserv.nl/?url=drive.google.com/uc%3Fid%3D' + fid + '%26export%3Dview&w=800';
 }
 
 function esc(s) {
@@ -631,6 +608,17 @@ function loadDemo() {
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
+
+// 写真タップ→モーダル（イベント委譲）
+document.addEventListener('click', function(e) {
+  var img = e.target.closest('.photo-tap');
+  if (img && img.src) {
+    e.stopPropagation();
+    document.getElementById('modalImg').src = img.src;
+    document.getElementById('photoModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+});
 </script>
 </body>
 </html>
