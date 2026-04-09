@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIFF Test | Enchanté'-Hair</title>
+<script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;600&family=Cinzel:wght@400;600&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #0f2318;
+    color: #f8f4ec;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+  
+  .logo {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.15em;
+    color: #c9a84c;
+    margin-bottom: 0.5rem;
+  }
+  
+  .subtitle {
+    font-size: 0.7rem;
+    color: #8a7d6a;
+    letter-spacing: 0.2em;
+    margin-bottom: 2rem;
+  }
+  
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    color: #c9a84c;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .status-list {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+  
+  .status-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    transition: all 0.3s ease;
+  }
+  
+  .status-item.success {
+    border-color: rgba(76,201,120,0.4);
+    background: rgba(76,201,120,0.06);
+  }
+  
+  .status-item.error {
+    border-color: rgba(201,76,76,0.4);
+    background: rgba(201,76,76,0.06);
+  }
+  
+  .status-item.waiting {
+    border-color: rgba(201,168,76,0.2);
+    opacity: 0.5;
+  }
+  
+  .status-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .success .status-icon { background: rgba(76,201,120,0.15); border-color: rgba(76,201,120,0.3); }
+  .error .status-icon { background: rgba(201,76,76,0.15); border-color: rgba(201,76,76,0.3); }
+  
+  .status-label {
+    font-size: 0.8rem;
+    font-weight: 300;
+    color: #8a7d6a;
+    flex: 1;
+  }
+  
+  .status-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: right;
+    word-break: break-all;
+  }
+  
+  .success .status-value { color: #4cc978; }
+  .error .status-value { color: #c94c4c; }
+  .waiting .status-value { color: #8a7d6a; }
+  
+  .uid-box {
+    width: 100%;
+    max-width: 400px;
+    background: rgba(201,168,76,0.08);
+    border: 2px solid rgba(201,168,76,0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    display: none;
+  }
+  
+  .uid-box.visible { display: block; }
+  
+  .uid-label {
+    font-size: 0.7rem;
+    color: #8a7d6a;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.5rem;
+  }
+  
+  .uid-value {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #c9a84c;
+    word-break: break-all;
+    line-height: 1.6;
+    user-select: all;
+  }
+  
+  .uid-name {
+    font-size: 1rem;
+    color: #f8f4ec;
+    margin-top: 0.8rem;
+    font-weight: 600;
+  }
+  
+  .uid-pic {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 0.8rem auto 0;
+    border: 2px solid rgba(201,168,76,0.3);
+    display: none;
+  }
+  
+  .error-box {
+    width: 100%;
+    max-width: 400px;
+    background: rgba(201,76,76,0.08);
+    border: 1px solid rgba(201,76,76,0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: none;
+  }
+  
+  .error-box.visible { display: block; }
+  
+  .error-title {
+    font-size: 0.85rem;
+    color: #c94c4c;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .error-detail {
+    font-size: 0.75rem;
+    color: #8a7d6a;
+    line-height: 1.8;
+    word-break: break-all;
+  }
+  
+  .btn {
+    display: inline-block;
+    background: #c9a84c;
+    color: #0f2318;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 6px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    margin-top: 1rem;
+    display: none;
+  }
+  
+  .btn.visible { display: inline-block; }
+  
+  .copy-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(201,168,76,0.9);
+    color: #0f2318;
+    padding: 0.6rem 1.5rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+  
+  .copy-toast.show { transform: translateX(-50%) translateY(0); }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(201,168,76,0.2);
+    border-top-color: #c9a84c;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
+  .note {
+    max-width: 400px;
+    font-size: 0.7rem;
+    color: #8a7d6a;
+    line-height: 1.8;
+    text-align: center;
+    margin-top: 1rem;
+    padding: 1rem;
+    border-top: 1px solid rgba(201,168,76,0.1);
+  }
+</style>
+</head>
+<body>
+
+<p class="logo">ENCHANTÉ'-HAIR</p>
+<p class="subtitle">LIFF DIAGNOSTIC TEST</p>
+
+<h1>LIFF 接続テスト</h1>
+
+<div class="status-list">
+  <div class="status-item waiting" id="step1">
+    <div class="status-icon"><div class="spinner"></div></div>
+    <span class="status-label">LIFF SDK 読み込み</span>
+    <span class="status-value">待機中...</span>
+  </div>
+  
+  <div class="status-item waiting" id="step2">
+    <div class="status-icon">②</div>
+    <span class="status-label">liff.init()</span>
+    <span class="status-value">待機中...</span>
+  </div>
+  
+  <div class="status-item waiting" id="step3">
+    <div class="status-icon">③</div>
+    <span class="status-label">LINE内ブラウザ判定</span>
+    <span class="status-value">待機中...</span>
+  </div>
+  
+  <div class="status-item waiting" id="step4">
+    <div class="status-icon">④</div>
+    <span class="status-label">ログイン状態</span>
+    <span class="status-value">待機中...</span>
+  </div>
+  
+  <div class="status-item waiting" id="step5">
+    <div class="status-icon">⑤</div>
+    <span class="status-label">プロフィール取得</span>
+    <span class="status-value">待機中...</span>
+  </div>
+  
+  <div class="status-item waiting" id="step6">
+    <div class="status-icon">⑥</div>
+    <span class="status-label">User ID 取得</span>
+    <span class="status-value">待機中...</span>
+  </div>
+</div>
+
+<div class="uid-box" id="uidBox">
+  <p class="uid-label">YOUR LINE USER ID</p>
+  <p class="uid-value" id="uidDisplay">—</p>
+  <p class="uid-name" id="nameDisplay"></p>
+  <img class="uid-pic" id="picDisplay" />
+</div>
+
+<div class="error-box" id="errorBox">
+  <p class="error-title">エラー詳細</p>
+  <p class="error-detail" id="errorDetail"></p>
+</div>
+
+<button class="btn" id="copyBtn" onclick="copyUid()">UIDをコピー</button>
+<button class="btn" id="loginBtn" onclick="doLogin()" style="background:#06C755;color:#fff;">LINEログイン</button>
+
+<div class="copy-toast" id="toast">コピーしました！</div>
+
+<p class="note">
+  ※ このページは LIFF の動作確認専用です。<br>
+  既存の予約システムには一切影響しません。<br>
+  LINE アプリ内から開いてテストしてください。
+</p>
+
+<script>
+// ============================================================
+// ★ ここにLIFF IDを入れてください
+// LINE Developers → LIFFアプリ → 追加 で作成した新しいIDを貼る
+// ============================================================
+const LIFF_ID = 'YOUR_LIFF_ID_HERE';
+// ============================================================
+
+let retrievedUid = '';
+
+function setStatus(stepId, status, value) {
+  const el = document.getElementById(stepId);
+  el.className = 'status-item ' + status;
+  el.querySelector('.status-value').textContent = value;
+  
+  const icon = el.querySelector('.status-icon');
+  if (status === 'success') icon.textContent = '✓';
+  else if (status === 'error') icon.textContent = '✗';
+  else icon.innerHTML = '<div class="spinner"></div>';
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  document.getElementById('errorDetail').textContent = msg;
+  box.classList.add('visible');
+}
+
+async function runTest() {
+  // Step 1: SDK読み込み確認
+  if (typeof liff !== 'undefined') {
+    setStatus('step1', 'success', 'OK (v' + (liff.getVersion ? liff.getVersion() : '?') + ')');
+  } else {
+    setStatus('step1', 'error', '読み込み失敗');
+    showError('LIFF SDKが読み込めませんでした。ネットワーク接続を確認してください。');
+    return;
+  }
+  
+  // Step 2: liff.init()
+  if (LIFF_ID === 'YOUR_LIFF_ID_HERE') {
+    setStatus('step2', 'error', 'LIFF ID未設定');
+    showError('liff-test.html の LIFF_ID を設定してください。\n\nLINE Developers → LIFFアプリ → 追加 で新しいLIFFアプリを作成し、そのIDをコード内の LIFF_ID に貼り付けてください。\n\n例: 2009018401-xxxxxxxx');
+    return;
+  }
+  
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    setStatus('step2', 'success', '初期化成功');
+  } catch (e) {
+    setStatus('step2', 'error', '初期化失敗');
+    showError('liff.init() エラー:\n\n' + (e.code || '') + '\n' + (e.message || e.toString()) + '\n\n考えられる原因:\n・LIFF IDが正しくない\n・Endpoint URLがこのページのURLと一致していない\n・チャネルが公開されていない');
+    return;
+  }
+  
+  // Step 3: LINE内ブラウザ判定
+  const isInClient = liff.isInClient();
+  setStatus('step3', isInClient ? 'success' : 'error', isInClient ? 'LINE内ブラウザ ✓' : '外部ブラウザ');
+  
+  if (!isInClient) {
+    showError('このページはLINE外のブラウザで開かれています。\n\nLINEアプリ内から開くと自動ログインされます。\n外部ブラウザの場合は「LINEログイン」ボタンを押してください。');
+  }
+  
+  // Step 4: ログイン状態
+  const isLoggedIn = liff.isLoggedIn();
+  setStatus('step4', isLoggedIn ? 'success' : 'error', isLoggedIn ? 'ログイン済み' : '未ログイン');
+  
+  if (!isLoggedIn) {
+    if (!isInClient) {
+      document.getElementById('loginBtn').classList.add('visible');
+    }
+    showError('ログインされていません。\n\nLINEアプリ内から開くか、「LINEログイン」ボタンを押してください。');
+    return;
+  }
+  
+  // Step 5: プロフィール取得
+  try {
+    const profile = await liff.getProfile();
+    setStatus('step5', 'success', '取得成功');
+    
+    // Step 6: UID
+    if (profile.userId) {
+      retrievedUid = profile.userId;
+      setStatus('step6', 'success', profile.userId.substring(0, 10) + '...');
+      
+      // UID表示
+      const uidBox = document.getElementById('uidBox');
+      document.getElementById('uidDisplay').textContent = profile.userId;
+      document.getElementById('nameDisplay').textContent = profile.displayName + ' 様';
+      
+      if (profile.pictureUrl) {
+        const pic = document.getElementById('picDisplay');
+        pic.src = profile.pictureUrl;
+        pic.style.display = 'block';
+      }
+      
+      uidBox.classList.add('visible');
+      document.getElementById('copyBtn').classList.add('visible');
+    } else {
+      setStatus('step6', 'error', 'UIDが空');
+      showError('プロフィールは取得できましたがuserIdが空です。\n\nLIFFアプリのScopeに「profile」が設定されているか確認してください。');
+    }
+    
+  } catch (e) {
+    setStatus('step5', 'error', '取得失敗');
+    setStatus('step6', 'error', '—');
+    showError('liff.getProfile() エラー:\n\n' + (e.code || '') + '\n' + (e.message || e.toString()) + '\n\n考えられる原因:\n・LIFFアプリのScopeに「profile」が含まれていない\n・LINEログインチャネルの「メール取得権限」設定\n・ユーザーが権限を拒否した');
+  }
+}
+
+function doLogin() {
+  liff.login();
+}
+
+function copyUid() {
+  if (!retrievedUid) return;
+  navigator.clipboard.writeText(retrievedUid).then(function() {
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 2000);
+  });
+}
+
+// 実行
+runTest();
+</script>
+
+</body>
+</html>
