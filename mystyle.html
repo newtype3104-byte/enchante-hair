@@ -355,7 +355,7 @@
 
 <div class="photo-modal" id="photoModal" onclick="closeModal()">
   <button class="photo-modal-close" onclick="closeModal()">✕</button>
-  <img id="modalImg" src="" alt="">
+  <img id="modalImg" src="" alt="" referrerpolicy="no-referrer">
 </div>
 
 <script>
@@ -452,14 +452,14 @@ function renderCards(records, page) {
         subsHtml = '<div class="card-photo-subs">';
         subs.forEach(function(p) {
           subsHtml += '<div class="card-photo-sub">' +
-            '<img src="'+p.url+'" alt="'+p.label+'" loading="lazy" onclick="openModal(\''+p.url+'\')" onerror="this.parentElement.style.display=\'none\'">' +
+            '<img src="'+p.url+'" alt="'+p.label+'" loading="lazy" referrerpolicy="no-referrer" onclick="openModal(\''+p.url+'\')" onerror="this.parentElement.style.display=\'none\'">' +
             '<span class="card-photo-label">'+p.label+'</span></div>';
         });
         subsHtml += '</div>';
       }
       photosHtml = '<div class="card-photos">' +
         '<div class="card-photo-main">' +
-        '<img src="'+mainPhoto+'" alt="メイン" loading="lazy" onclick="openModal(\''+mainPhoto+'\')">' +
+        '<img src="'+mainPhoto+'" alt="メイン" loading="lazy" referrerpolicy="no-referrer" onclick="openModal(\''+mainPhoto+'\')">' +
         '<span class="card-photo-label">メイン</span></div>' +
         subsHtml + '</div>';
     } else {
