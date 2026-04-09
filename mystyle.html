@@ -459,14 +459,14 @@ function renderCards(records, page) {
         subsHtml = '<div class="card-photo-subs">';
         subs.forEach(function(p) {
           subsHtml += '<div class="card-photo-sub">' +
-            '<img src="'+p.url+'" alt="'+p.label+'" loading="lazy" class="photo-tap">' +
+            '<img src="'+p.url+'" alt="'+p.label+'" loading="lazy" class="photo-tap" onerror="this.parentElement.style.display=\'none\'">' +
             '<span class="card-photo-label">'+p.label+'</span></div>';
         });
         subsHtml += '</div>';
       }
       photosHtml = '<div class="card-photos">' +
         '<div class="card-photo-main">' +
-        '<img src="'+mainPhoto+'" alt="メイン" loading="lazy" class="photo-tap">' +
+        '<img src="'+mainPhoto+'" alt="メイン" loading="lazy" class="photo-tap" onerror="this.parentElement.style.display=\'none\'">' +
         '<span class="card-photo-label">メイン</span></div>' +
         subsHtml + '</div>';
     } else {
@@ -545,12 +545,16 @@ function showError(msg) {
   document.getElementById('errorScreen').classList.add('active');
 }
 
-// 写真URLをそのまま返す（APIがbase64で返すため変換不要）
-// スライド・ドキュメントURLはスキップ
+// lh3 URL → weservプロキシURL変換
 function photoUrl(url) {
   if (!url) return '';
-  // data:URI（base64）ならそのまま
-  if (url.indexOf('data:image') === 0) return url;
+  var s = String(url);
+  // lh3.googleusercontent.com/d/{fileId} → weserv経由
+  var m = s.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return 'https://images.weserv.nl/?url=drive.google.com/uc%3Fid%3D' + m[1] + '%26export%3Dview&w=800';
+  // drive.google.com/file/d/{fileId} → weserv経由
+  m = s.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return 'https://images.weserv.nl/?url=drive.google.com/uc%3Fid%3D' + m[1] + '%26export%3Dview&w=800';
   return '';
 }
 
