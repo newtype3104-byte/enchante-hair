@@ -370,27 +370,32 @@ let currentUid = '';
 let isLoading = false;
 
 async function initApp() {
+  // ?uid= がある場合はLIFFを使わず直接データ取得（画像表示のため）
+  var params = new URLSearchParams(location.search);
+  var uidParam = params.get('uid') || '';
+  
+  if (uidParam) {
+    currentUid = uidParam;
+    await fetchData(currentUid, 1);
+    return;
+  }
+  
+  // ?uid= がない場合はLIFFでUID取得してリダイレクト
   try {
     await liff.init({ liffId: LIFF_ID });
     if (liff.isInClient() || liff.isLoggedIn()) {
-      const profile = await liff.getProfile();
-      currentUid = profile.userId;
-    } else {
-      currentUid = new URLSearchParams(location.search).get('uid') || '';
+      var profile = await liff.getProfile();
+      var uid = profile.userId;
+      if (uid) {
+        // 同じページに?uid=付きでリダイレクト（LIFFコンテキストを抜ける）
+        window.location.replace(location.origin + location.pathname + '?uid=' + uid);
+        return;
+      }
     }
-    if (!currentUid) {
-      showError('LINEログインが必要です。<br>LINEアプリから再度お試しください。');
-      return;
-    }
-    await fetchData(currentUid, 1);
+    showError('LINEログインが必要です。<br>LINEアプリから再度お試しください。');
   } catch (err) {
     console.error('LIFF init error:', err);
-    currentUid = new URLSearchParams(location.search).get('uid') || '';
-    if (currentUid) {
-      await fetchData(currentUid, 1);
-    } else {
-      loadDemo();
-    }
+    loadDemo();
   }
 }
 
