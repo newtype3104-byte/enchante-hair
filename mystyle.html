@@ -279,20 +279,33 @@
     color: var(--text-dark); margin-bottom: 0.6rem;
     line-height: 1.5;
   }
-  .card-details {
-    display: flex; flex-wrap: wrap; gap: 0.35rem;
-    margin-bottom: 0.7rem;
-  }
-  .detail-tag {
-    font-size: 0.65rem; font-weight: 400;
-    color: var(--text-mid);
-    background: var(--bg-warm);
-    padding: 0.22rem 0.6rem;
-    border-radius: 4px;
+  /* Card detail list (paragraph style) */
+  .card-detail-list {
+    display: flex; flex-direction: column;
+    gap: 0; margin-bottom: 0.7rem;
     border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
   }
-  .detail-tag .tag-label {
-    color: var(--text-light); margin-right: 0.2rem;
+  .card-detail-row {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .card-detail-row:last-child { border-bottom: none; }
+  .detail-label {
+    flex-shrink: 0; width: 5.5rem;
+    font-size: 0.68rem; font-weight: 500;
+    color: var(--text-light);
+    background: var(--bg-warm);
+    padding: 0.5rem 0.6rem;
+    letter-spacing: 0.02em;
+  }
+  .detail-value {
+    flex: 1;
+    font-size: 0.72rem; font-weight: 300;
+    color: var(--text-mid);
+    padding: 0.5rem 0.6rem;
+    line-height: 1.7;
   }
 
   /* Card memo / suggestion */
@@ -590,18 +603,24 @@ function renderCards(records, page) {
       photosHtml = `<div class="no-photo">📷 写真なし</div>`;
     }
 
-    // -- Detail Tags --
-    const tags = [];
-    if (r.side)      tags.push({ l: 'サイド', v: r.side });
-    if (r.top)       tags.push({ l: 'トップ', v: r.top });
-    if (r.back)      tags.push({ l: 'バック', v: r.back });
-    if (r.technique) tags.push({ l: 'テクニック', v: r.technique });
-    if (r.product)   tags.push({ l: '整髪料', v: r.product });
-    if (r.nextGuide) tags.push({ l: '次回目安', v: r.nextGuide });
+    // -- Detail Rows (長文対応) --
+    const details = [];
+    if (r.side)      details.push({ icon: '✂️', l: 'サイド', v: r.side });
+    if (r.top)       details.push({ icon: '✂️', l: 'トップ', v: r.top });
+    if (r.back)      details.push({ icon: '✂️', l: 'バック', v: r.back });
+    if (r.technique) details.push({ icon: '🔧', l: 'テクニック', v: r.technique });
+    if (r.product)   details.push({ icon: '💈', l: '整髪料', v: r.product });
+    if (r.nextGuide) details.push({ icon: '📅', l: '次回目安', v: r.nextGuide });
 
-    const tagsHtml = tags.map(t =>
-      `<span class="detail-tag"><span class="tag-label">${t.l}</span>${t.v}</span>`
-    ).join('');
+    const detailsHtml = details.length > 0
+      ? `<div class="card-detail-list">` +
+        details.map(d =>
+          `<div class="card-detail-row">
+             <div class="detail-label">${d.icon} ${d.l}</div>
+             <div class="detail-value">${escHtml(d.v)}</div>
+           </div>`
+        ).join('') + `</div>`
+      : '';
 
     // -- Memo --
     let noteHtml = '';
@@ -631,7 +650,7 @@ function renderCards(records, page) {
       ${photosHtml}
       <div class="card-body">
         ${r.style ? `<div class="card-style-name">${escHtml(r.style)}</div>` : ''}
-        ${tagsHtml ? `<div class="card-details">${tagsHtml}</div>` : ''}
+        ${detailsHtml}
         ${noteHtml}
         ${suggestHtml}
       </div>`;
