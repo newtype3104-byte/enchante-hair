@@ -195,6 +195,8 @@
     color: var(--text-muted); font-size: 0.72rem; font-weight: 300;
     aspect-ratio: 4 / 3; background: var(--bg-warm);
   }
+  .proxy-img { transition: opacity 0.3s ease; }
+  .proxy-img[src=""] { opacity: 0; }
 
   /* Card Body */
   .card-body { padding: 0.9rem 1rem; }
@@ -410,6 +412,7 @@ async function fetchData(uid, page) {
       document.getElementById('totalCount').textContent = '直近 ' + data.records.length + ' 件';
     }
     renderCards(data.records, page);
+    loadAllProxyImages();
     currentPage = page;
     document.getElementById('loadingScreen').classList.add('hidden');
     document.getElementById('mainContent').classList.add('active');
@@ -439,28 +442,31 @@ function renderCards(records, page) {
     var dateStr = fmtDate(r.date);
 
     // Photos
-    var mainPhoto = (r.photos && r.photos.main) ? fixPhotoUrl(r.photos.main) : '';
+    var mainFid = (r.photos && r.photos.main) ? extractFileId(r.photos.main) : '';
     var subs = [];
     var subMap = {back:'バック',front:'フロント',before:'ビフォー'};
     ['back','front','before'].forEach(function(k) {
-      if (r.photos && r.photos[k]) subs.push({url:fixPhotoUrl(r.photos[k]), label:subMap[k]});
+      if (r.photos && r.photos[k]) {
+        var fid = extractFileId(r.photos[k]);
+        if (fid) subs.push({fid:fid, label:subMap[k]});
+      }
     });
 
     var photosHtml = '';
-    if (mainPhoto) {
+    if (mainFid) {
       var subsHtml = '';
       if (subs.length > 0) {
         subsHtml = '<div class="card-photo-subs">';
         subs.forEach(function(p) {
           subsHtml += '<div class="card-photo-sub">' +
-            '<img src="'+p.url+'" alt="'+p.label+'" loading="lazy" referrerpolicy="no-referrer" onclick="openModal(\''+p.url+'\')" onerror="this.parentElement.style.display=\'none\'">' +
+            '<img class="proxy-img" data-fid="'+p.fid+'" src="" alt="'+p.label+'" onclick="openModalProxy(this)">' +
             '<span class="card-photo-label">'+p.label+'</span></div>';
         });
         subsHtml += '</div>';
       }
       photosHtml = '<div class="card-photos">' +
         '<div class="card-photo-main">' +
-        '<img src="'+mainPhoto+'" alt="メイン" loading="lazy" referrerpolicy="no-referrer" onclick="openModal(\''+mainPhoto+'\')">' +
+        '<img class="proxy-img" data-fid="'+mainFid+'" src="" alt="メイン" onclick="openModalProxy(this)">' +
         '<span class="card-photo-label">メイン</span></div>' +
         subsHtml + '</div>';
     } else {
@@ -539,16 +545,35 @@ function showError(msg) {
   document.getElementById('errorScreen').classList.add('active');
 }
 
-// Google Drive画像URL → LINE WebView対応形式に変換
-function fixPhotoUrl(url) {
+// Google Drive URL → fileId抽出
+function extractFileId(url) {
   if (!url) return '';
-  // lh3.googleusercontent.com/d/{fileId} → drive.google.com/thumbnail?id={fileId}&sz=w800
   var m = url.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
-  if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800';
-  // drive.google.com/uc?export=view&id={fileId} → thumbnail形式
+  if (m) return m[1];
+  m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
   m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800';
-  return url;
+  if (m) return m[1];
+  return '';
+}
+
+// GASプロキシ経由で画像を読み込む
+function loadProxyImage(imgEl) {
+  var fid = imgEl.getAttribute('data-fid');
+  if (!fid) return;
+  fetch(API_BASE + '?img=' + fid)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.url) {
+        imgEl.src = data.url;
+        imgEl.setAttribute('data-full', data.url);
+      } else {
+        imgEl.parentElement.style.display = 'none';
+      }
+    })
+    .catch(function() {
+      imgEl.parentElement.style.display = 'none';
+    });
 }
 
 function esc(s) {
@@ -570,6 +595,24 @@ function openModal(url) {
   document.getElementById('modalImg').src = url;
   document.getElementById('photoModal').classList.add('active');
   document.body.style.overflow = 'hidden';
+}
+
+function openModalProxy(imgEl) {
+  event.stopPropagation();
+  var fullUrl = imgEl.getAttribute('data-full') || imgEl.src;
+  if (fullUrl) {
+    document.getElementById('modalImg').src = fullUrl;
+    document.getElementById('photoModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+// カード描画後にプロキシ画像を順次読み込む
+function loadAllProxyImages() {
+  var imgs = document.querySelectorAll('.proxy-img');
+  imgs.forEach(function(img) {
+    if (!img.src || img.src === location.href) loadProxyImage(img);
+  });
 }
 
 function closeModal() {
