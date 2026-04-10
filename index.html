@@ -214,20 +214,51 @@ function parseDocText(text) {
       let match;
       while ((match = slotRegex.exec(line)) !== null) {
         const startStr = match[1], endStr = match[2], noteRaw = match[4] || '';
-        const [sH,sM] = startStr.split(':').map(Number);
-        const [eH,eM] = endStr.split(':').map(Number);
-        const minutes = (eH*60+eM)-(sH*60+sM);
-        const slot = { time: `${startStr}〜${endStr}`, minutes };
         const note = noteRaw.replace(/^✂️\s*/,'').trim();
-        if (note) slot.note = note;
-        slots.push(slot);
+        const expanded = expandRangeToSlots(startStr, endStr, note || null);
+        slots.push(...expanded);
       }
     }
     data.push({ date:`${monthNum}/${dayNum}`, dow, month:`${monthNum}月`, day:dayNum, monthNum, full:isFull, closed:isClosed, slots });
   }
   return data;
 }
-
+// ── 範囲→個別スロット展開（予約フォームと同ロジック GRID=30, INTERVAL=40） ──
+const GRID = 30;
+const INTERVAL = 40;
+function expandRangeToSlots(startStr, endStr, note) {
+  const [sH, sM] = startStr.split(':').map(Number);
+  const [eH, eM] = endStr.split(':').map(Number);
+  const startMin = sH * 60 + sM;
+  const endMin   = eH * 60 + eM;
+  const slots = [];
+  function pushSlot(t) {
+    const remain = endMin - t;
+    if (remain < GRID) return;
+    const hh = String(Math.floor(t / 60));
+    const mm = String(t % 60).padStart(2, '0');
+    const slot = { time: `${hh}:${mm}`, minutes: remain };
+    if (note) slot.note = note;
+    if (!note && remain < 60) slot.note = 'カットのみ';
+    slots.push(slot);
+  }
+  let t = startMin;
+  if (t % GRID === 0) {
+    while (t + GRID <= endMin) { pushSlot(t); t += GRID; }
+  } else {
+    while (t + GRID <= endMin) {
+      pushSlot(t);
+      var next = t + INTERVAL;
+      if (next % GRID === 0) {
+        t = next;
+        while (t + GRID <= endMin) { pushSlot(t); t += GRID; }
+        break;
+      }
+      t = next;
+    }
+  }
+  return slots;
+}
 let DATA = [], selectedMinutes = 0;
 function getDurationClass(m) { return m>=60?'long':m>=30?'medium':'short'; }
 function getDowClass(d) { return d==='土'?'sat':d==='日'?'sun':''; }
