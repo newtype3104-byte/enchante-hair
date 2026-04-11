@@ -321,7 +321,7 @@ function render() {
         <span class="slot ${selectedMinutes>0?'highlight':''}">
           <span class="slot-duration ${getDurationClass(s.minutes)}"></span>
           ${s.time}
-          ${s.note?`<span class="slot-note">✂️ ${s.note}</span>`:''}
+          ${s.note && !(selectedMinutes > 0 && s.minutes >= selectedMinutes && s.note === 'カットのみ') ? `<span class="slot-note">✂️ ${s.note}</span>`:''}
         </span>`).join('')}</div>`:''}
       ${waitlistHtml}
     `;
