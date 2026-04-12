@@ -176,6 +176,16 @@
   </div>
 </div>
 
+<!-- メニュー選択案内モーダル -->
+<div class="modal-overlay" id="menuPromptModal">
+  <div class="modal">
+    <div class="modal-icon">☝️</div>
+    <div class="modal-title">メニューを選んでください</div>
+    <div class="modal-desc">上のメニューを選んでからタップすると<br>LINEで予約メッセージを送れます</div>
+    <button class="modal-btn primary" id="menuPromptCloseBtn">メニューを選ぶ</button>
+  </div>
+</div>
+
 <!-- 予約モーダル（スロットタップ時） -->
 <div class="modal-overlay" id="reserveModal">
   <div class="modal">
@@ -370,6 +380,10 @@ function render() {
   // スロットタップで予約モーダル
   container.querySelectorAll('.slot.clickable').forEach(slot => {
     slot.addEventListener('click', () => {
+      if (selectedMinutes === 0) {
+        document.getElementById('menuPromptModal').classList.add('show');
+        return;
+      }
       showReserveModal({
         dateLabel: slot.dataset.dateLabel,
         time: slot.dataset.time,
@@ -455,6 +469,15 @@ document.getElementById('reserveModalCloseBtn').addEventListener('click', () => 
   document.getElementById('reserveModal').classList.remove('show');
 });
 document.getElementById('reserveModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+});
+
+// ── メニュー選択案内モーダル ──
+document.getElementById('menuPromptCloseBtn').addEventListener('click', () => {
+  document.getElementById('menuPromptModal').classList.remove('show');
+  document.querySelector('.menu-chips').scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+document.getElementById('menuPromptModal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
 });
 
