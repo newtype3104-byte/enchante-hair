@@ -48,8 +48,13 @@
   .status-badge.full { background:rgba(248,113,113,0.15); color:var(--red); }
   .status-badge.open { background:rgba(74,222,128,0.12); color:var(--green); }
   .slots { padding:0 1rem 0.9rem; display:flex; flex-wrap:wrap; gap:0.35rem; }
-  .slot { display:inline-flex; align-items:center; gap:0.3rem; padding:0.4rem 0.75rem; background:rgba(255,255,255,0.04); border-radius:8px; font-size:0.82rem; font-family:'Outfit',sans-serif; font-weight:500; }
+  .slot { display:inline-flex; align-items:center; gap:0.3rem; padding:0.4rem 0.75rem; background:rgba(255,255,255,0.04); border-radius:8px; font-size:0.82rem; font-family:'Outfit',sans-serif; font-weight:500; border:1px solid transparent; }
+  .slot.clickable { cursor:pointer; transition:all 0.15s; }
+  .slot.clickable:hover { background:rgba(201,169,110,0.15); border-color:rgba(201,169,110,0.4); transform:translateY(-1px); }
+  .slot.clickable:active { transform:scale(0.96); }
+  .slot.clickable::after { content:'›'; color:var(--gold); font-size:1rem; line-height:1; margin-left:0.15rem; opacity:0.7; }
   .slot.highlight { background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.2); }
+  .slot.highlight.clickable:hover { background:rgba(74,222,128,0.18); border-color:rgba(74,222,128,0.45); }
   .slot-note { font-size:0.6rem; color:var(--gold-light); background:rgba(201,169,110,0.12); padding:0.15rem 0.4rem; border-radius:4px; font-family:'Noto Sans JP',sans-serif; }
   .slot-duration { display:inline-block; width:6px; height:6px; border-radius:50%; flex-shrink:0; }
   .slot-duration.long { background:var(--green); } .slot-duration.medium { background:var(--gold); } .slot-duration.short { background:var(--red); }
@@ -171,6 +176,18 @@
   </div>
 </div>
 
+<!-- 予約モーダル（スロットタップ時） -->
+<div class="modal-overlay" id="reserveModal">
+  <div class="modal">
+    <div class="modal-icon">📅</div>
+    <div class="modal-title">この時間で予約する</div>
+    <div class="modal-date" id="reserveModalDate"></div>
+    <div class="modal-desc">LINEチャットが開きます。<br>メッセージはそのまま送信してください🙏</div>
+    <a class="modal-chat-link" href="#" id="reserveChatLink">LINEで予約メッセージを送る</a>
+    <button class="modal-btn secondary" id="reserveModalCloseBtn">閉じる</button>
+  </div>
+</div>
+
 <!-- キャンセル待ちモーダル（通常友だち用） -->
 <div class="modal-overlay" id="waitlistChatModal">
   <div class="modal">
@@ -267,7 +284,6 @@ function getToday() { const n=new Date(); return {month:n.getMonth()+1, day:n.ge
 // 日付をyyyy-MM-dd形式に変換
 function toDateStr(monthNum, day) {
   const year = new Date().getFullYear();
-  // 1月のデータが12月に表示される場合の補正
   const today = new Date();
   let y = year;
   if (monthNum < today.getMonth() + 1 - 6) y = year + 1;
@@ -304,7 +320,7 @@ function render() {
     const card = document.createElement('div');
     card.className = `day-card ${d.closed?'full':(d.full||noMatchForMenu)?'full':'available'} ${isPast?'past':''}`;
 
-    // キャンセル待ちボタン（満席 or メニュー不足 & 未来日 & 定休日でないときのみ表示）
+    // キャンセル待ちボタン
     let waitlistHtml = '';
     if ((d.full || noMatchForMenu) && !d.closed && !isPast) {
       waitlistHtml = `
@@ -327,7 +343,8 @@ function render() {
         ${d.closed?'<span class="status-badge full">定休日</span>':d.full?'<span class="status-badge full">✕ 満席</span>':noMatchForMenu?'<span class="status-badge full">空き不足</span>':''}
       </div>
       ${!d.full && !d.closed && !noMatchForMenu?`<div class="slots">${filteredSlots.map(s=>`
-        <span class="slot ${selectedMinutes>0?'highlight':''}">
+        <span class="slot ${selectedMinutes>0?'highlight':''} ${isPast?'':'clickable'}"
+          ${isPast?'':`data-date="${toDateStr(d.monthNum, d.day)}" data-date-label="${d.monthNum}月${d.day}日（${d.dow}）" data-time="${s.time}" data-note="${s.note||''}"`}>
           <span class="slot-duration ${getDurationClass(s.minutes)}"></span>
           ${s.time}
           ${s.note && !(selectedMinutes > 0 && s.minutes >= selectedMinutes && s.note === 'カットのみ') ? `<span class="slot-note">✂️ ${s.note}</span>`:''}
@@ -337,7 +354,7 @@ function render() {
     container.appendChild(card);
   });
 
-  // キャンセル待ちボタンにイベントリスナーを設定
+  // キャンセル待ちボタンにイベントリスナー
   container.querySelectorAll('.waitlist-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const dateStr = btn.dataset.date;
@@ -347,6 +364,17 @@ function render() {
       } else {
         showChatModal(dateLabel);
       }
+    });
+  });
+
+  // スロットタップで予約モーダル
+  container.querySelectorAll('.slot.clickable').forEach(slot => {
+    slot.addEventListener('click', () => {
+      showReserveModal({
+        dateLabel: slot.dataset.dateLabel,
+        time: slot.dataset.time,
+        note: slot.dataset.note || ''
+      });
     });
   });
 
@@ -402,10 +430,37 @@ document.getElementById('modalRegisterBtn').addEventListener('click', async () =
   }
 });
 
+// ── 予約モーダル（スロットタップ時） ──
+function getSelectedMenuLabel() {
+  const active = document.querySelector('.chip.active');
+  if (!active || active.dataset.minutes === '0') return '';
+  const clone = active.cloneNode(true);
+  clone.querySelectorAll('.chip-time').forEach(el => el.remove());
+  return clone.textContent.trim();
+}
+
+function showReserveModal({ dateLabel, time, note }) {
+  document.getElementById('reserveModalDate').textContent = `${dateLabel} ${time}`;
+  const menu = getSelectedMenuLabel();
+  const parts = [`${dateLabel} ${time} で予約希望です`];
+  if (menu) parts.push(`メニュー：${menu}`);
+  if (note) parts.push(`※${note}の枠`);
+  const message = parts.join('\n');
+  const url = `https://line.me/R/oaMessage/@kbs5076i/?${encodeURIComponent(message)}`;
+  document.getElementById('reserveChatLink').href = url;
+  document.getElementById('reserveModal').classList.add('show');
+}
+
+document.getElementById('reserveModalCloseBtn').addEventListener('click', () => {
+  document.getElementById('reserveModal').classList.remove('show');
+});
+document.getElementById('reserveModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+});
+
 // ── 通常友だち用モーダル ──
 function showChatModal(dateLabel) {
   document.getElementById('chatModalDate').textContent = dateLabel;
-  // LINEチャットリンクに日付を含める
   const chatUrl = `https://line.me/R/oaMessage/@kbs5076i/?${encodeURIComponent(dateLabel + 'のキャンセル待ち希望')}`;
   document.getElementById('chatLink').href = chatUrl;
   document.getElementById('waitlistChatModal').classList.add('show');
