@@ -237,7 +237,7 @@ function expandRangeToSlots(startStr, endStr, note) {
     if (remain < GRID) return;
     const hh = String(Math.floor(t / 60));
     const mm = String(t % 60).padStart(2, '0');
-    const slot = { time: `${hh}:${mm}`, minutes: remain };
+    const slot = { time: `${hh}:${mm}`, minutes: remain, gapStart: startMin, gapEnd: endMin };
     if (note) slot.note = note;
     if (!note && remain < 40) slot.note = 'カットのみ';
     slots.push(slot);
@@ -287,6 +287,15 @@ function render() {
     let noMatchForMenu = false;
     if (selectedMinutes>0 && !d.full && !d.closed) {
       filteredSlots = d.slots.filter(s=>s.minutes>=selectedMinutes);
+      filteredSlots = filteredSlots.filter(function(s) {
+        var parts = s.time.split(':').map(Number);
+        var t = parts[0] * 60 + parts[1];
+        var before = t - s.gapStart;
+        var after = s.gapEnd - (t + selectedMinutes);
+        var beforeBad = (before > 0 && before < 40);
+        var afterBad  = (after  > 0 && after  < 40);
+        return !(beforeBad && afterBad);
+      });
       if (filteredSlots.length===0 && d.slots.length>0) noMatchForMenu = true;
       if (filteredSlots.length===0 && d.slots.length===0) noMatchForMenu = true;
     }
