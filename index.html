@@ -115,6 +115,16 @@
   .modal-success.show { display:block; }
   .modal-form { display:block; }
   .modal-form.hide { display:none; }
+
+  /* ── オプション選択 ── */
+  .option-filter { display:none; padding:0.5rem 1rem 0; }
+  .option-filter.visible { display:block; }
+  .option-filter-label { font-size:0.6rem; letter-spacing:0.1em; color:var(--gold); text-transform:uppercase; margin-bottom:0.4rem; font-weight:600; }
+  .option-chips { display:flex; gap:0.35rem; flex-wrap:wrap; }
+  .option-chip { padding:0.45rem 0.8rem; border-radius:100px; border:1.5px solid var(--border); background:rgba(255,255,255,0.03); color:var(--text); font-size:0.8rem; font-family:inherit; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+  .option-chip.active { background:rgba(201,169,110,0.15); color:var(--gold-light); border-color:var(--gold); font-weight:600; }
+  .option-chip .opt-time { font-size:0.68rem; opacity:0.6; margin-left:0.2rem; }
+  .option-chip.active .opt-time { opacity:0.9; }
 </style>
 </head>
 <body>
@@ -134,14 +144,19 @@
   <div class="menu-filter">
     <div class="menu-label">メニューで絞り込み</div>
     <div class="menu-chips">
-      <button class="chip active" data-minutes="0">すべて</button>
-      <button class="chip" data-minutes="30">カット <span class="chip-time">30分</span></button>
-      <button class="chip" data-minutes="40">カット+シャンプー <span class="chip-time">40分</span></button>
-      <button class="chip" data-minutes="50">カット+シャンプー+眉カット <span class="chip-time">50分</span></button>
-      <button class="chip" data-minutes="60">会員コース <span class="chip-time">60分</span></button>
-      <button class="chip" data-minutes="90">カット+カラー <span class="chip-time">90分</span></button>
-      <button class="chip" data-minutes="120">パーマ <span class="chip-time">120分〜</span></button>
+      <button class="chip active" data-minutes="0" data-menu="">すべて</button>
+      <button class="chip" data-minutes="30" data-menu="カット">カット <span class="chip-time">30分</span></button>
+      <button class="chip" data-minutes="40" data-menu="カット+シャンプー">カット+シャンプー <span class="chip-time">40分</span></button>
+      <button class="chip" data-minutes="50" data-menu="カット+シャンプー+眉カット">カット+シャンプー+眉カット <span class="chip-time">50分</span></button>
+      <button class="chip" data-minutes="60" data-menu="会員コース">会員コース <span class="chip-time">60分</span></button>
+      <button class="chip" data-minutes="90" data-menu="カット+カラー">カット+カラー <span class="chip-time">90分</span></button>
+      <button class="chip" data-minutes="120" data-menu="パーマ">パーマ <span class="chip-time">120分〜</span></button>
     </div>
+  </div>
+  <!-- オプション選択エリア -->
+  <div class="option-filter" id="optionFilter">
+    <div class="option-filter-label">オプション追加</div>
+    <div class="option-chips" id="optionChips"></div>
   </div>
   <div class="legend">
     <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> 60分以上</span>
@@ -213,6 +228,27 @@
 <script>
 const DOC_ID = '1L31it-00hRpTAZ0JG_YcH3ONKc5WA4GO71uV9qOeIT0';
 const API_URL = 'https://script.google.com/macros/s/AKfycbxxgLMI6EpUIQBtwzYC7232rBJME2wJA6_JzmckvjkYiMvZdI6KGl9l_lKn2w6zhgzL/exec';
+
+// ── オプション定義 ──
+const OPTION_MAP = {
+  'カット': [
+    {name:'なし', min:0},
+    {name:'眉カット', min:0}
+  ],
+  'カット+カラー': [
+    {name:'なし', min:0},
+    {name:'眉カット', min:0},
+    {name:'シェービング', min:0},
+    {name:'ワンカラー', min:30}
+  ],
+  'パーマ': [
+    {name:'なし', min:0},
+    {name:'眉カット', min:0},
+    {name:'シェービング', min:0},
+    {name:'ヘッドスパ', min:30},
+    {name:'ワンカラー', min:30}
+  ]
+};
 
 // URLパラメータ取得
 function getUrlParam(key) {
@@ -286,7 +322,7 @@ function expandRangeToSlots(startStr, endStr, note) {
   }
   return slots;
 }
-let DATA = [], selectedMinutes = 0;
+let DATA = [], selectedMinutes = 0, selectedMenuKey = '', selectedOption = null, selectedOptionMin = 0;
 function getDurationClass(m) { return m>=60?'long':m>=30?'medium':'short'; }
 function getDowClass(d) { return d==='土'?'sat':d==='日'?'sun':''; }
 function getToday() { const n=new Date(); return {month:n.getMonth()+1, day:n.getDate()}; }
@@ -300,24 +336,57 @@ function toDateStr(monthNum, day) {
   return `${y}-${String(monthNum).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 }
 
+// ── オプション表示 ──
+function showOptionChips(menuKey) {
+  const panel = document.getElementById('optionFilter');
+  const container = document.getElementById('optionChips');
+  const options = OPTION_MAP[menuKey];
+  if (!options) {
+    panel.classList.remove('visible');
+    selectedOption = null;
+    selectedOptionMin = 0;
+    return;
+  }
+  let html = '';
+  options.forEach(opt => {
+    const timeLabel = opt.min > 0 ? `<span class="opt-time">+${opt.min}分</span>` : '';
+    const isActive = (selectedOption === null && opt.name === 'なし') || selectedOption === opt.name ? ' active' : '';
+    html += `<button class="option-chip${isActive}" data-opt="${opt.name}" data-min="${opt.min}">${opt.name}${timeLabel}</button>`;
+  });
+  container.innerHTML = html;
+  panel.classList.add('visible');
+
+  container.querySelectorAll('.option-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      container.querySelectorAll('.option-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedOption = chip.dataset.opt === 'なし' ? null : chip.dataset.opt;
+      selectedOptionMin = parseInt(chip.dataset.min) || 0;
+      selectedMinutes = parseInt(document.querySelector('.chip.active').dataset.minutes) + selectedOptionMin;
+      render();
+    });
+  });
+}
+
 function render() {
   const container = document.getElementById('schedule');
   const noMatch = document.getElementById('noMatch');
   container.innerHTML = '';
   let hasVisible = false;
   const today = getToday();
+  const effectiveMinutes = selectedMinutes;
   DATA.forEach(d => {
     const isPast = (d.monthNum < today.month)||(d.monthNum===today.month && d.day<today.day);
     const isToday = d.monthNum===today.month && d.day===today.day;
     let filteredSlots = d.slots;
     let noMatchForMenu = false;
-    if (selectedMinutes>0 && !d.full && !d.closed) {
-      filteredSlots = d.slots.filter(s=>s.minutes>=selectedMinutes);
+    if (effectiveMinutes>0 && !d.full && !d.closed) {
+      filteredSlots = d.slots.filter(s=>s.minutes>=effectiveMinutes);
       filteredSlots = filteredSlots.filter(function(s) {
         var parts = s.time.split(':').map(Number);
         var t = parts[0] * 60 + parts[1];
         var before = t - s.gapStart;
-        var after = s.gapEnd - (t + selectedMinutes);
+        var after = s.gapEnd - (t + effectiveMinutes);
         var beforeBad = (before > 0 && before < 40);
         var afterBad  = (after  > 0 && after  < 40);
         return !(beforeBad && afterBad);
@@ -325,7 +394,7 @@ function render() {
       if (filteredSlots.length===0 && d.slots.length>0) noMatchForMenu = true;
       if (filteredSlots.length===0 && d.slots.length===0) noMatchForMenu = true;
     }
-    if (selectedMinutes>0 && d.closed) return;
+    if (effectiveMinutes>0 && d.closed) return;
     hasVisible = true;
     const card = document.createElement('div');
     card.className = `day-card ${d.closed?'full':(d.full||noMatchForMenu)?'full':'available'} ${isPast?'past':''}`;
@@ -353,11 +422,11 @@ function render() {
         ${d.closed?'<span class="status-badge full">定休日</span>':d.full?'<span class="status-badge full">✕ 満席</span>':noMatchForMenu?'<span class="status-badge full">空き不足</span>':''}
       </div>
       ${!d.full && !d.closed && !noMatchForMenu?`<div class="slots">${filteredSlots.map(s=>`
-        <span class="slot ${selectedMinutes>0?'highlight':''} ${isPast?'':'clickable'}"
+        <span class="slot ${effectiveMinutes>0?'highlight':''} ${isPast?'':'clickable'}"
           ${isPast?'':`data-date="${toDateStr(d.monthNum, d.day)}" data-date-label="${d.monthNum}月${d.day}日（${d.dow}）" data-time="${s.time}" data-note="${s.note||''}"`}>
           <span class="slot-duration ${getDurationClass(s.minutes)}"></span>
           ${s.time}
-          ${s.note && !(selectedMinutes > 0 && s.minutes >= selectedMinutes && s.note === 'カットのみ') ? `<span class="slot-note">✂️ ${s.note}</span>`:''}
+          ${s.note && !(effectiveMinutes > 0 && s.minutes >= effectiveMinutes && s.note === 'カットのみ') ? `<span class="slot-note">✂️ ${s.note}</span>`:''}
         </span>`).join('')}</div>`:''}
       ${waitlistHtml}
     `;
@@ -380,7 +449,7 @@ function render() {
   // スロットタップで予約モーダル
   container.querySelectorAll('.slot.clickable').forEach(slot => {
     slot.addEventListener('click', () => {
-      if (selectedMinutes === 0) {
+      if (effectiveMinutes === 0) {
         document.getElementById('menuPromptModal').classList.add('show');
         return;
       }
@@ -457,7 +526,11 @@ function showReserveModal({ dateLabel, time, note }) {
   document.getElementById('reserveModalDate').textContent = `${dateLabel} ${time}`;
   const menu = getSelectedMenuLabel();
   const parts = [`${dateLabel} ${time} で予約希望です`];
-  if (menu) parts.push(`メニュー：${menu}`);
+  if (menu) {
+    let menuText = menu;
+    if (selectedOption) menuText += ' + ' + selectedOption;
+    parts.push(`メニュー：${menuText}`);
+  }
   if (note) parts.push(`※${note}の枠`);
   const message = parts.join('\n');
   const url = `https://line.me/R/oaMessage/@kbs5076i/?${encodeURIComponent(message)}`;
@@ -501,7 +574,17 @@ document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
     document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
     chip.classList.add('active');
-    selectedMinutes = parseInt(chip.dataset.minutes);
+    const baseMinutes = parseInt(chip.dataset.minutes);
+    selectedMenuKey = chip.dataset.menu || '';
+
+    // オプションリセット
+    selectedOption = null;
+    selectedOptionMin = 0;
+    selectedMinutes = baseMinutes;
+
+    // オプション対象メニューならチップ表示
+    showOptionChips(selectedMenuKey);
+
     render();
   });
 });
