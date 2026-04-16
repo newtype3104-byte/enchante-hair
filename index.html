@@ -116,15 +116,32 @@
   .modal-form { display:block; }
   .modal-form.hide { display:none; }
 
-  /* ── オプション選択 ── */
-  .option-filter { display:none; padding:0.5rem 1rem 0; }
-  .option-filter.visible { display:block; }
-  .option-filter-label { font-size:0.6rem; letter-spacing:0.1em; color:var(--gold); text-transform:uppercase; margin-bottom:0.4rem; font-weight:600; }
-  .option-chips { display:flex; gap:0.35rem; flex-wrap:wrap; }
-  .option-chip { padding:0.45rem 0.8rem; border-radius:100px; border:1.5px solid var(--border); background:rgba(255,255,255,0.03); color:var(--text); font-size:0.8rem; font-family:inherit; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
-  .option-chip.active { background:rgba(201,169,110,0.15); color:var(--gold-light); border-color:var(--gold); font-weight:600; }
-  .option-chip .opt-time { font-size:0.68rem; opacity:0.6; margin-left:0.2rem; }
-  .option-chip.active .opt-time { opacity:0.9; }
+/* ── オプション選択モーダル ── */
+.opt-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1100; display:none; align-items:center; justify-content:center; padding:1.5rem; }
+.opt-modal-overlay.show { display:flex; animation:fadeIn 0.2s ease; }
+.opt-modal { background:#fff; border-radius:16px; width:100%; max-width:420px; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,0.4); animation:modalIn 0.25s ease; }
+.opt-modal-header { display:flex; justify-content:space-between; align-items:flex-start; padding:1.25rem 1.2rem 0.5rem; }
+.opt-modal-eyebrow { font-size:0.62rem; letter-spacing:0.12em; color:#4ade80; font-weight:600; text-transform:uppercase; margin-bottom:0.25rem; }
+.opt-modal-menu-name { font-size:0.97rem; font-weight:700; color:#1a1a22; line-height:1.35; }
+.opt-modal-close { background:rgba(0,0,0,0.07); border:none; color:#666; font-size:0.8rem; cursor:pointer; width:28px; height:28px; border-radius:50%; flex-shrink:0; margin-left:0.6rem; margin-top:0.1rem; }
+.opt-modal-subtitle { padding:0 1.2rem 0.9rem; font-size:0.74rem; color:#9090a8; }
+.opt-cards { padding:0 1.2rem; display:flex; flex-direction:column; gap:0.5rem; }
+.opt-card { display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; background:#f8f8fc; border:2px solid #e8e8f0; border-radius:12px; cursor:pointer; transition:all 0.2s; user-select:none; }
+.opt-card:active { transform:scale(0.97); }
+.opt-card.selected { border-color:#4ade80; background:#f0fdf4; }
+.opt-card-left { display:flex; align-items:center; gap:0.7rem; }
+.opt-check { width:22px; height:22px; border-radius:50%; border:2px solid #ccc; background:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; }
+.opt-card.selected .opt-check { background:#4ade80; border-color:#4ade80; }
+.opt-check svg { display:none; width:12px; height:12px; stroke:#fff; fill:none; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.opt-card.selected .opt-check svg { display:block; }
+.opt-card-label { font-size:0.92rem; font-weight:500; color:#1a1a22; }
+.opt-card-badge { font-size:0.72rem; font-weight:600; padding:0.18rem 0.5rem; border-radius:100px; color:#9090a8; background:#ebebf5; border:1px solid #ddd; transition:all 0.2s; }
+.opt-card.selected .opt-card-badge { color:#16a34a; background:#dcfce7; border-color:#bbf7d0; }
+.opt-total-bar { margin:1rem 1.2rem 0.2rem; padding:0.7rem 1rem; background:#f4f4f8; border-radius:10px; display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:#666; }
+.opt-total-num { font-family:'Outfit',sans-serif; font-size:1.1rem; font-weight:700; color:#1a1a22; }
+.opt-modal-footer { padding:0.9rem 1.2rem 1.25rem; }
+.opt-confirm-btn { width:100%; padding:0.85rem; background:#1a1a22; color:#fff; border:0; border-radius:12px; font-family:inherit; font-size:0.95rem; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.opt-confirm-btn:active { transform:scale(0.98); opacity:0.85; }
 </style>
 </head>
 <body>
@@ -153,11 +170,7 @@
       <button class="chip" data-minutes="120" data-menu="パーマ">パーマ <span class="chip-time">120分〜</span></button>
     </div>
   </div>
-  <!-- オプション選択エリア -->
-  <div class="option-filter" id="optionFilter">
-    <div class="option-filter-label">オプション追加</div>
-    <div class="option-chips" id="optionChips"></div>
-  </div>
+
   <div class="legend">
     <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> 60分以上</span>
     <span class="legend-item"><span class="legend-dot" style="background:var(--gold)"></span> 30〜59分</span>
@@ -224,7 +237,27 @@
     <button class="modal-btn secondary" id="chatModalCloseBtn">閉じる</button>
   </div>
 </div>
-
+<!-- オプション選択モーダル -->
+<div class="opt-modal-overlay" id="optModalOverlay">
+  <div class="opt-modal">
+    <div class="opt-modal-header">
+      <div>
+        <div class="opt-modal-eyebrow">オプション選択</div>
+        <div class="opt-modal-menu-name" id="optModalMenuName"></div>
+      </div>
+      <button class="opt-modal-close" id="optModalClose">✕</button>
+    </div>
+    <div class="opt-modal-subtitle">1つ選んでください</div>
+    <div class="opt-cards" id="optCards"></div>
+    <div class="opt-total-bar">
+      <span>合計所要時間</span>
+      <span class="opt-total-num"><span id="optTotalMin">—</span>分</span>
+    </div>
+    <div class="opt-modal-footer">
+      <button class="opt-confirm-btn" id="optConfirmBtn">この条件で空きを見る</button>
+    </div>
+  </div>
+</div>
 <script>
 const DOC_ID = '1L31it-00hRpTAZ0JG_YcH3ONKc5WA4GO71uV9qOeIT0';
 const API_URL = 'https://script.google.com/macros/s/AKfycbxxgLMI6EpUIQBtwzYC7232rBJME2wJA6_JzmckvjkYiMvZdI6KGl9l_lKn2w6zhgzL/exec';
@@ -336,36 +369,61 @@ function toDateStr(monthNum, day) {
   return `${y}-${String(monthNum).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 }
 
-// ── オプション表示 ──
+// ── オプション選択モーダル ──
 function showOptionChips(menuKey) {
-  const panel = document.getElementById('optionFilter');
-  const container = document.getElementById('optionChips');
   const options = OPTION_MAP[menuKey];
   if (!options) {
-    panel.classList.remove('visible');
     selectedOption = null;
     selectedOptionMin = 0;
+    closeOptModal();
     return;
   }
+  const baseMenu = document.querySelector('.chip.active');
+  const baseMin = baseMenu ? parseInt(baseMenu.dataset.minutes) : 0;
+  const menuLabel = menuKey + '（' + baseMin + '分）';
+  document.getElementById('optModalMenuName').textContent = menuLabel;
+  selectedOption = null;
+  selectedOptionMin = 0;
+  renderOptCards();
+  updateOptTotal();
+  document.getElementById('optModalOverlay').classList.add('show');
+}
+
+function closeOptModal() {
+  document.getElementById('optModalOverlay').classList.remove('show');
+}
+
+function renderOptCards() {
+  const options = OPTION_MAP[selectedMenuKey] || [];
   let html = '';
   options.forEach(opt => {
-    const timeLabel = opt.min > 0 ? `<span class="opt-time">+${opt.min}分</span>` : '';
-    const isActive = (selectedOption === null && opt.name === 'なし') || selectedOption === opt.name ? ' active' : '';
-    html += `<button class="option-chip${isActive}" data-opt="${opt.name}" data-min="${opt.min}">${opt.name}${timeLabel}</button>`;
+    const sel = ((selectedOption === null && opt.name === 'なし') || selectedOption === opt.name) ? ' selected' : '';
+    const badge = opt.min > 0 ? `<span class="opt-card-badge">+${opt.min}分</span>` : '';
+    html += `<div class="opt-card${sel}" data-opt="${opt.name}" data-min="${opt.min}">
+      <div class="opt-card-left">
+        <div class="opt-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div>
+        <span class="opt-card-label">${opt.name}</span>
+      </div>
+      ${badge}
+    </div>`;
   });
+  const container = document.getElementById('optCards');
   container.innerHTML = html;
-  panel.classList.add('visible');
-
-  container.querySelectorAll('.option-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      container.querySelectorAll('.option-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      selectedOption = chip.dataset.opt === 'なし' ? null : chip.dataset.opt;
-      selectedOptionMin = parseInt(chip.dataset.min) || 0;
-      selectedMinutes = parseInt(document.querySelector('.chip.active').dataset.minutes) + selectedOptionMin;
-      render();
+  container.querySelectorAll('.opt-card').forEach(card => {
+    card.addEventListener('click', () => {
+      selectedOption = card.dataset.opt === 'なし' ? null : card.dataset.opt;
+      selectedOptionMin = parseInt(card.dataset.min) || 0;
+      container.querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      updateOptTotal();
     });
   });
+}
+
+function updateOptTotal() {
+  const baseMenu = document.querySelector('.chip.active');
+  const baseMin = baseMenu ? parseInt(baseMenu.dataset.minutes) : 0;
+  document.getElementById('optTotalMin').textContent = baseMin + selectedOptionMin;
 }
 
 function render() {
@@ -568,7 +626,29 @@ document.getElementById('chatModalCloseBtn').addEventListener('click', () => {
 document.getElementById('waitlistChatModal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
 });
-
+// ── オプションモーダルのイベント ──
+document.getElementById('optModalClose').addEventListener('click', () => {
+  closeOptModal();
+  // キャンセル時はオプションなし状態で再描画
+  selectedOption = null;
+  selectedOptionMin = 0;
+  selectedMinutes = parseInt(document.querySelector('.chip.active').dataset.minutes);
+  render();
+});
+document.getElementById('optModalOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    closeOptModal();
+    selectedOption = null;
+    selectedOptionMin = 0;
+    selectedMinutes = parseInt(document.querySelector('.chip.active').dataset.minutes);
+    render();
+  }
+});
+document.getElementById('optConfirmBtn').addEventListener('click', () => {
+  closeOptModal();
+  selectedMinutes = parseInt(document.querySelector('.chip.active').dataset.minutes) + selectedOptionMin;
+  render();
+});
 // ── チップフィルター ──
 document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
