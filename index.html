@@ -670,25 +670,34 @@ document.querySelectorAll('.chip').forEach(chip => {
 });
 
 // ── 初期化 ──
-async function init() {
+function init() {
   const loading = document.getElementById('loading');
   const errorMsg = document.getElementById('errorMsg');
   const contentArea = document.getElementById('contentArea');
-  try {
-    const res = await fetch(API_URL, {redirect:'follow'});
-    const json = await res.json();
-    const text = json.text;
-    if (!text) throw new Error('No text');
-    DATA = parseDocText(text);
-    if (DATA.length===0) throw new Error('No data parsed');
-    loading.style.display = 'none';
-    contentArea.classList.add('visible');
-    render();
-  } catch(e) {
-    console.error('Load error:', e);
+
+  window.__jsonpCallback = function(json) {
+    try {
+      const text = json.text;
+      if (!text) throw new Error('No text');
+      DATA = parseDocText(text);
+      if (DATA.length === 0) throw new Error('No data parsed');
+      loading.style.display = 'none';
+      contentArea.classList.add('visible');
+      render();
+    } catch (e) {
+      console.error('Parse error:', e);
+      loading.style.display = 'none';
+      errorMsg.style.display = 'block';
+    }
+  };
+
+  const s = document.createElement('script');
+  s.src = API_URL + '?callback=__jsonpCallback';
+  s.onerror = function() {
     loading.style.display = 'none';
     errorMsg.style.display = 'block';
-  }
+  };
+  document.head.appendChild(s);
 }
 init();
 </script>
